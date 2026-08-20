@@ -114,7 +114,7 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
           Phone
         </div>
-        <div class="nav-item" id="nav-host-settings" title="Open the streaming host's web config (MediaServer or MediaServer, whichever is active). Pair ConferenceClient clients, configure capture, set apps, etc.">
+        <div class="nav-item" id="nav-host-settings" title="Open the videoing host's web config (MediaServer or MediaServer, whichever is active). Pair ConferenceClient clients, configure capture, set apps, etc.">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Host settings
         </div>
@@ -164,7 +164,7 @@
             <p id="ready-summary">Connect to your PC or launch a session from the library.</p>
             <div class="ready-actions">
               <button class="btn btn-primary btn-large" id="hero-control-pc">Open desktop</button>
-              <button class="btn btn-large" data-goto="quality">Stream settings</button>
+              <button class="btn btn-large" data-goto="quality">Video settings</button>
             </div>
           </div>
           <div class="ready-metrics">
@@ -195,7 +195,7 @@
             <!-- Per-session quality override. "Use global" inherits whatever's
                  in the Quality view; the lower presets apply just for this
                  session so heavy titles (BeamNG, Cyberpunk) get smoother
-                 streaming without dropping global quality. -->
+                 videoing without dropping global quality. -->
             <div class="codec-row" id="d-quality-row">
               <label class="codec-opt"><input type="radio" name="d-quality" value="inherit" checked> Use global <small>quality from settings</small></label>
               <label class="codec-opt"><input type="radio" name="d-quality" value="low"> Low <small>540p30 · 1.4 Mbps — coolest</small></label>
@@ -203,7 +203,7 @@
               <label class="codec-opt"><input type="radio" name="d-quality" value="high"> High <small>720p60 · 3.5 Mbps</small></label>
             </div>
             <div class="detail-actions">
-              <button class="btn btn-primary" id="detail-stream">▶  Join</button>
+              <button class="btn btn-primary" id="detail-video">▶  Join</button>
               <button class="btn" id="detail-register">Register with MediaServer</button>
             </div>
             <div id="detail-result"></div>
@@ -213,7 +213,7 @@
 
       <!-- Quality view -->
       <section data-view="quality" hidden>
-        <div class="topbar"><div><h1>Video quality</h1><div class="sub">Settings apply to every new session. Pick a preset or customize. Changes take effect on the next stream you start.</div></div></div>
+        <div class="topbar"><div><h1>Video quality</h1><div class="sub">Settings apply to every new session. Pick a preset or customize. Changes take effect on the next video you start.</div></div></div>
 
         <div class="smart-quality-card">
           <div>
@@ -280,7 +280,7 @@
                 <div class="label" style="margin-bottom:4px">CPU encoder (libx264)</div>
                 <div style="font-size:12px;color:var(--text-dim);line-height:1.5">
                   Off (default): NVENC on the GPU — fast and free if the GPU is idle.<br>
-                  On: encode on the CPU instead. Use this if a heavy session (Forza, Cyberpunk, BeamNG) saturates your GPU and the stream freezes — the session gets the entire GPU, encode runs on CPU. Costs ~3-4 CPU cores constantly.
+                  On: encode on the CPU instead. Use this if a heavy session (Forza, Cyberpunk, BeamNG) saturates your GPU and the video freezes — the session gets the entire GPU, encode runs on CPU. Costs ~3-4 CPU cores constantly.
                 </div>
               </div>
             </label>
@@ -420,7 +420,7 @@
 
       <!-- Phone view -->
       <section data-view="phone" hidden>
-        <div class="topbar"><div><h1>Phone (scrcpy)</h1><div class="sub">Mirror + control your Android phone from the host PC. The phone window is captured by the desktop stream, so you can use it from any browser.</div></div></div>
+        <div class="topbar"><div><h1>Phone (scrcpy)</h1><div class="sub">Mirror + control your Android phone from the host PC. The phone window is captured by the desktop video, so you can use it from any browser.</div></div></div>
 
         <div class="setup-step">
           <h3>Step 1  ·  One-time wireless ADB pairing</h3>
@@ -445,7 +445,7 @@
 
         <div class="setup-step">
           <h3>Step 3  ·  Launch phone window</h3>
-          <div class="desc">Opens scrcpy on the host PC, showing your phone's screen in a Windows window. Then start a Control PC stream — the phone window will be visible and clickable.</div>
+          <div class="desc">Opens scrcpy on the host PC, showing your phone's screen in a Windows window. Then start a Control PC video — the phone window will be visible and clickable.</div>
           <div id="phone-status" class="notice" style="margin-bottom:12px">Checking…</div>
           <button class="btn btn-primary" id="phone-launch">Launch phone window</button>
           <button class="btn" id="phone-stop">Stop</button>
@@ -558,7 +558,7 @@
         <div class="setup-step">
           <h3>7  ·  Media backend <span style="color:var(--text-faint);font-weight:400">(MediaServer vs MediaServer)</span></h3>
           <div class="desc">
-            <strong>MediaServer</strong> is the original open-source SessionStream host. <strong>MediaServer</strong> is a MediaServer fork with extra features: per-client app isolation, WGC capture (works for fullscreen-exclusive sessions that DXGI can't capture), updated virtual display driver. Both speak the same protocol — your ConferenceClient clients work with either.
+            <strong>MediaServer</strong> is the original open-source MediaVideo host. <strong>MediaServer</strong> is a MediaServer fork with extra features: per-client app isolation, WGC capture (works for fullscreen-exclusive sessions that DXGI can't capture), updated virtual display driver. Both speak the same protocol — your ConferenceClient clients work with either.
             <br><br>
             Only one can run at a time (they share ports 47984/47989/47990/47999). Switching requires admin (server must be running elevated).
           </div>
@@ -566,7 +566,7 @@
           <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap">
             <button class="btn" id="cfg-backend-mediaserver">Switch to MediaServer</button>
             <button class="btn" id="cfg-backend-apollo">Switch to MediaServer</button>
-            <a class="btn" href="https://app.notesync.workers.dev/dash-eb83f13e751c/host/" target="_blank">Open host web UI →</a>
+            <a class="btn" href="https://app.notesync.workers.dev/host/" target="_blank">Open host web UI →</a>
           </div>
           <div id="cfg-backend-result" style="margin-top:12px;font-size:12px;color:var(--text-dim)"></div>
         </div>
@@ -647,7 +647,7 @@
           </div>
         </div>
         <div class="modal-actions" style="margin-top:14px">
-          <button class="btn btn-primary" id="m-stream">Join</button>
+          <button class="btn btn-primary" id="m-video">Join</button>
           <button class="btn" id="m-register">Register with MediaServer</button>
         </div>
         <div id="m-result" style="margin-top:12px"></div>
