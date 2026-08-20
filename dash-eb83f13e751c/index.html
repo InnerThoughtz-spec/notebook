@@ -1,11 +1,10 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- API base — this static launcher lives on github.io; all API + WS traffic goes to the Worker on workers.dev -->
   <script>window.__API_BASE = "https://app.notesync.workers.dev/dash-eb83f13e751c";</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Workspace</title>
+  <title>Meeting Room</title>
   <!-- PWA: lets ChromeOS / Chrome / Edge install this as a native-feeling
        app from the address bar. No app store, no admin rights, no Linux
        subsystem. Just open the URL in Chrome and click "Install". -->
@@ -13,7 +12,7 @@
   <meta name="theme-color" content="#080b14" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="Workspace" />
+  <meta name="apple-mobile-web-app-title" content="Meeting Room" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
@@ -64,7 +63,7 @@
     <div class="ring r2"></div>
     <div class="ring r3"></div>
     <svg class="logo" aria-label="logo"><use href="#brand-logo"/></svg>
-    <div class="tag">Workspace</div>
+    <div class="tag">Meeting Room</div>
     <div class="scan"></div>
   </div>
 
@@ -75,15 +74,15 @@
 
     <!-- ===== Sidebar ===== -->
     <aside class="sidebar">
-      <div class="brand" title="Workspace">
+      <div class="brand" title="Meeting Room">
         <svg class="brand-mark" aria-label="logo"><use href="#brand-logo"/></svg>
-        <span class="brand-name">Workspace</span>
+        <span class="brand-name">Meeting Room</span>
       </div>
 
       <nav class="nav">
         <div class="nav-item active" data-view="library">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-          Library
+          Rooms
         </div>
         <div class="nav-item" data-view="tutorials">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
@@ -115,14 +114,14 @@
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
           Phone
         </div>
-        <div class="nav-item" id="nav-host-settings" title="Open the streaming host's web config (Apollo or Sunshine, whichever is active). Pair Moonlight clients, configure capture, set apps, etc.">
+        <div class="nav-item" id="nav-host-settings" title="Open the streaming host's web config (MediaServer or MediaServer, whichever is active). Pair ConferenceClient clients, configure capture, set apps, etc.">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           Host settings
         </div>
         <!-- "Install as app" — only visible when Chrome/Edge has fired the
-             beforeinstallprompt event. On ChromeOS this adds Workspace to
+             beforeinstallprompt event. On ChromeOS this adds Meeting Room to
              your launcher shelf as a standalone app window. -->
-        <div class="nav-item" id="nav-install-app" hidden title="Install Workspace as a standalone app on this device. ChromeOS adds it to your launcher; Windows/Mac to Start/Dock.">
+        <div class="nav-item" id="nav-install-app" hidden title="Install as a desktop app. ChromeOS adds it to your launcher; Windows/Mac to Start/Dock.">
           <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
           Install as app
         </div>
@@ -145,12 +144,12 @@
     <!-- ===== Main ===== -->
     <main class="main">
 
-      <!-- Library view -->
+      <!-- Rooms view -->
       <section data-view="library">
         <div class="topbar">
           <div>
             <div class="eyebrow">LIBRARY</div>
-            <h1>Games</h1>
+            <h1>Sessions</h1>
             <div class="sub" id="lib-sub">Loading…</div>
           </div>
           <div class="search">
@@ -162,7 +161,7 @@
           <div class="ready-copy">
             <div class="ready-status"><span class="ready-pulse"></span><span id="ready-label">Checking your host</span></div>
             <h2>Remote desktop</h2>
-            <p id="ready-summary">Connect to your PC or launch a game from the library.</p>
+            <p id="ready-summary">Connect to your PC or launch a session from the library.</p>
             <div class="ready-actions">
               <button class="btn btn-primary btn-large" id="hero-control-pc">Open desktop</button>
               <button class="btn btn-large" data-goto="quality">Stream settings</button>
@@ -177,9 +176,9 @@
         <div id="library" class="grid"></div>
       </section>
 
-      <!-- Game detail view (the 2-step launch — opens when you click a card) -->
-      <section data-view="game-detail" hidden>
-        <div class="detail" id="game-detail">
+      <!-- Session detail view (the 2-step launch — opens when you click a card) -->
+      <section data-view="session-detail" hidden>
+        <div class="detail" id="session-detail">
           <div class="detail-hero" id="detail-hero"></div>
           <button class="btn detail-back" id="detail-back">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
@@ -187,15 +186,15 @@
           </button>
           <div class="detail-content">
             <div class="detail-meta" id="detail-meta">App ID · Path</div>
-            <h2 class="detail-title" id="detail-title">Game</h2>
+            <h2 class="detail-title" id="detail-title">Session</h2>
             <div class="codec-row">
               <label class="codec-opt"><input type="radio" name="d-codec" value="h264" checked> H.264 <small>works everywhere</small></label>
               <label class="codec-opt"><input type="radio" name="d-codec" value="hevc"> HEVC <small>better quality</small></label>
               <label class="codec-opt"><input type="radio" name="d-codec" value="av1"> AV1 <small>40-series GPU</small></label>
             </div>
-            <!-- Per-game quality override. "Use global" inherits whatever's
+            <!-- Per-session quality override. "Use global" inherits whatever's
                  in the Quality view; the lower presets apply just for this
-                 game so heavy titles (BeamNG, Cyberpunk) get smoother
+                 session so heavy titles (BeamNG, Cyberpunk) get smoother
                  streaming without dropping global quality. -->
             <div class="codec-row" id="d-quality-row">
               <label class="codec-opt"><input type="radio" name="d-quality" value="inherit" checked> Use global <small>quality from settings</small></label>
@@ -204,8 +203,8 @@
               <label class="codec-opt"><input type="radio" name="d-quality" value="high"> High <small>720p60 · 3.5 Mbps</small></label>
             </div>
             <div class="detail-actions">
-              <button class="btn btn-primary" id="detail-stream">▶  Play in browser</button>
-              <button class="btn" id="detail-register">Register with Sunshine</button>
+              <button class="btn btn-primary" id="detail-stream">▶  Join</button>
+              <button class="btn" id="detail-register">Register with MediaServer</button>
             </div>
             <div id="detail-result"></div>
           </div>
@@ -214,7 +213,7 @@
 
       <!-- Quality view -->
       <section data-view="quality" hidden>
-        <div class="topbar"><div><h1>Stream quality</h1><div class="sub">Settings apply to every new session. Pick a preset or customize. Changes take effect on the next stream you start.</div></div></div>
+        <div class="topbar"><div><h1>Video quality</h1><div class="sub">Settings apply to every new session. Pick a preset or customize. Changes take effect on the next stream you start.</div></div></div>
 
         <div class="smart-quality-card">
           <div>
@@ -281,7 +280,7 @@
                 <div class="label" style="margin-bottom:4px">CPU encoder (libx264)</div>
                 <div style="font-size:12px;color:var(--text-dim);line-height:1.5">
                   Off (default): NVENC on the GPU — fast and free if the GPU is idle.<br>
-                  On: encode on the CPU instead. Use this if a heavy game (Forza, Cyberpunk, BeamNG) saturates your GPU and the stream freezes — the game gets the entire GPU, encode runs on CPU. Costs ~3-4 CPU cores constantly.
+                  On: encode on the CPU instead. Use this if a heavy session (Forza, Cyberpunk, BeamNG) saturates your GPU and the stream freezes — the session gets the entire GPU, encode runs on CPU. Costs ~3-4 CPU cores constantly.
                 </div>
               </div>
             </label>
@@ -373,7 +372,7 @@
         <div id="sp-app" hidden>
           <div class="sp-tabs">
             <button class="sp-tab active" data-sp-tab="home">Home</button>
-            <button class="sp-tab" data-sp-tab="library">Library</button>
+            <button class="sp-tab" data-sp-tab="library">Rooms</button>
             <button class="sp-tab" data-sp-tab="search">Search</button>
           </div>
 
@@ -385,7 +384,7 @@
             <div class="sp-tracklist" id="sp-top"></div>
           </div>
 
-          <!-- Library tab — playlists -->
+          <!-- Rooms tab — playlists -->
           <div class="sp-pane" data-sp-pane="library" hidden>
             <div class="sp-grid" id="sp-playlists"></div>
             <h3 class="sp-section-h" style="margin-top:32px">Liked songs</h3>
@@ -461,12 +460,12 @@
 
       <!-- Setup view -->
       <section data-view="setup" hidden>
-        <div class="topbar"><div><h1>Setup</h1><div class="sub">Connect to Sunshine and your public hostname.</div></div></div>
+        <div class="topbar"><div><h1>Setup</h1><div class="sub">Connect to MediaServer and your public hostname.</div></div></div>
         <div id="setup-status" class="notice" style="margin-bottom:16px">Loading status…</div>
 
         <div class="setup-step">
-          <h3>1  ·  Sunshine connection</h3>
-          <div class="desc">Talks to Sunshine's REST API at <code>https://&lt;host&gt;:&lt;port&gt;</code> using the credentials you set when first opening the Sunshine UI. Your password is stored locally in <code>innerpersonal.config.json</code> on this PC only.</div>
+          <h3>1  ·  MediaServer connection</h3>
+          <div class="desc">Talks to MediaServer's REST API at <code>https://&lt;host&gt;:&lt;port&gt;</code> using the credentials you set when first opening the MediaServer UI. Your password is stored locally in <code>innerpersonal.config.json</code> on this PC only.</div>
           <div class="row">
             <div><div class="label">Host</div><input class="input" id="cfg-host" /></div>
             <div><div class="label">Port</div><input class="input" id="cfg-port" /></div>
@@ -487,14 +486,14 @@
         </div>
 
         <div class="setup-step">
-          <h3>3  ·  Pair with Sunshine</h3>
-          <div class="desc">One-time handshake so the WebRTC bridge can launch games. After pairing, the cert is saved and you don't need to do this again unless you reset Sunshine's pairings.</div>
+          <h3>3  ·  Pair with MediaServer</h3>
+          <div class="desc">One-time handshake so the WebRTC bridge can launch sessions. After pairing, the cert is saved and you don't need to do this again unless you reset MediaServer's pairings.</div>
           <div id="pair-status" class="notice" style="margin-bottom:12px">Checking pairing status…</div>
           <div class="row">
             <button class="btn btn-primary" id="pair-start">Start pairing</button>
           </div>
           <div id="pair-pin-row" style="margin-top:14px;display:none">
-            <div class="label">Enter the 4-digit PIN shown by Sunshine</div>
+            <div class="label">Enter the 4-digit PIN shown by MediaServer</div>
             <div class="row">
               <input class="input" id="pair-pin" inputmode="numeric" maxlength="4" placeholder="0000" style="font-size:18px;letter-spacing:8px;text-align:center" />
               <button class="btn btn-primary" id="pair-pin-submit" style="flex:0 0 auto">Submit PIN</button>
@@ -539,7 +538,7 @@
           <div class="desc">Built-in Spotify player using your Premium account. One-time setup:
             <ol style="margin:10px 0 0;padding-left:22px;line-height:1.7">
               <li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com/dashboard</a> and log in with your Spotify account.</li>
-              <li>Click <strong>Create app</strong>. Name it whatever (e.g. "My Workspaceer"). Description: anything.</li>
+              <li>Click <strong>Create app</strong>. Name it whatever (e.g. "My Meeting Roomer"). Description: anything.</li>
               <li>Under <strong>Redirect URIs</strong>, click "Add" and paste this exact URL: <code id="sp-redirect-uri" style="background:var(--bg-2);padding:2px 6px;border-radius:4px;cursor:pointer;user-select:all">…loading…</code> <button class="btn btn-ghost" id="sp-copy-uri" style="padding:4px 8px;font-size:11px;min-height:0;margin-left:4px">Copy</button></li>
               <li>Under <strong>Which API/SDKs are you planning to use</strong>, check <strong>Web API</strong> and <strong>Web Playback SDK</strong>.</li>
               <li>Save. On the app's page, click <strong>Settings</strong> (top right). Copy the <strong>Client ID</strong> value.</li>
@@ -557,17 +556,17 @@
         </div>
 
         <div class="setup-step">
-          <h3>7  ·  Streaming backend <span style="color:var(--text-faint);font-weight:400">(Sunshine vs Apollo)</span></h3>
+          <h3>7  ·  Media backend <span style="color:var(--text-faint);font-weight:400">(MediaServer vs MediaServer)</span></h3>
           <div class="desc">
-            <strong>Sunshine</strong> is the original open-source GameStream host. <strong>Apollo</strong> is a Sunshine fork with extra features: per-client app isolation, WGC capture (works for fullscreen-exclusive games that DXGI can't capture), updated virtual display driver. Both speak the same protocol — your Moonlight clients work with either.
+            <strong>MediaServer</strong> is the original open-source SessionStream host. <strong>MediaServer</strong> is a MediaServer fork with extra features: per-client app isolation, WGC capture (works for fullscreen-exclusive sessions that DXGI can't capture), updated virtual display driver. Both speak the same protocol — your ConferenceClient clients work with either.
             <br><br>
             Only one can run at a time (they share ports 47984/47989/47990/47999). Switching requires admin (server must be running elevated).
           </div>
           <div id="cfg-backend-status" style="margin-top:14px;font-size:13px;color:var(--text-dim);font-family:'JetBrains Mono','Courier New',monospace">Loading status…</div>
           <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap">
-            <button class="btn" id="cfg-backend-sunshine">Switch to Sunshine</button>
-            <button class="btn" id="cfg-backend-apollo">Switch to Apollo</button>
-            <a class="btn" href="https://workspace.innerthoughtz00.workers.dev/host/" target="_blank">Open host web UI →</a>
+            <button class="btn" id="cfg-backend-mediaserver">Switch to MediaServer</button>
+            <button class="btn" id="cfg-backend-apollo">Switch to MediaServer</button>
+            <a class="btn" href="https://app.notesync.workers.dev/dash-eb83f13e751c/host/" target="_blank">Open host web UI →</a>
           </div>
           <div id="cfg-backend-result" style="margin-top:12px;font-size:12px;color:var(--text-dim)"></div>
         </div>
@@ -577,7 +576,7 @@
     <nav class="mobile-nav" aria-label="Primary navigation">
       <button class="nav-item mobile-nav-item active" data-view="library">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        <span>Library</span>
+        <span>Rooms</span>
       </button>
       <button class="nav-item mobile-nav-item" id="mobile-control-pc">
         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
@@ -633,14 +632,14 @@
   <div class="modal-backdrop" id="modal" hidden>
     <div class="modal">
       <div class="modal-head">
-        <h2 id="m-title">Game</h2>
+        <h2 id="m-title">Session</h2>
         <button class="icon-btn" id="m-close">✕</button>
       </div>
       <div class="modal-body">
         <div class="modal-art" id="m-art"></div>
         <div class="sub" id="m-meta" style="color:var(--text-dim);font-size:13px"></div>
         <div style="margin-top:14px">
-          <div class="label">Streaming mode</div>
+          <div class="label">Video mode</div>
           <div class="row" style="gap:6px">
             <label class="codec-opt"><input type="radio" name="m-codec" value="h264" checked> H.264 <small>works everywhere</small></label>
             <label class="codec-opt"><input type="radio" name="m-codec" value="hevc"> HEVC <small>browser-dependent</small></label>
@@ -648,8 +647,8 @@
           </div>
         </div>
         <div class="modal-actions" style="margin-top:14px">
-          <button class="btn btn-primary" id="m-stream">Play in browser</button>
-          <button class="btn" id="m-register">Register with Sunshine</button>
+          <button class="btn btn-primary" id="m-stream">Join</button>
+          <button class="btn" id="m-register">Register with MediaServer</button>
         </div>
         <div id="m-result" style="margin-top:12px"></div>
       </div>
@@ -670,7 +669,7 @@
       <button class="sp-ctrl" id="sp-prev" title="Previous" aria-label="Previous">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2.5a.5.5 0 0 1 1 0V7l7-4.5a.5.5 0 0 1 .8.4v10.2a.5.5 0 0 1-.8.4L4 9v4.5a.5.5 0 0 1-1 0z"/></svg>
       </button>
-      <button class="sp-ctrl sp-play-btn" id="sp-toggle" title="Play/Pause" aria-label="Play/Pause">
+      <button class="sp-ctrl sp-play-btn" id="sp-toggle" title="Mute/Unmute" aria-label="Mute/Unmute">
         <svg id="sp-toggle-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l6 5l-6 5z"/></svg>
       </button>
       <button class="sp-ctrl" id="sp-next" title="Next" aria-label="Next">
@@ -715,7 +714,7 @@
       _deferredInstall = null;
       const btn = document.getElementById('nav-install-app');
       if (btn) btn.hidden = true;
-      if (typeof toast === 'function') toast('Installed! Find Workspace in your apps.', 'ok');
+      if (typeof toast === 'function') toast('Installed! Find Meeting Room in your apps.', 'ok');
     });
     document.getElementById('nav-install-app')?.addEventListener('click', async () => {
       if (!_deferredInstall) {
