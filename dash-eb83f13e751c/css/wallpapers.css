@@ -1,0 +1,439 @@
+/* ============================================================
+   Wallpapers — applied via body[data-wallpaper="<id>"].
+   The #wallpaper div sits between body and .app at z-index 0.
+   Each variant either fills #wallpaper directly with a CSS
+   background, or has a JS hook (wallpapers.js) that mounts a
+   canvas inside it.
+
+   Most wallpapers use the live --mx / --my variables (set by
+   wallpapers.js from mousemove) for parallax / spotlight
+   effects, which is what "interactable" means here.
+   ============================================================ */
+
+/* The wallpaper canvas — covers viewport, never blocks clicks */
+#wallpaper { transition: opacity .35s ease; }
+#wallpaper > .layer {
+  position: absolute; inset: 0;
+  will-change: transform, opacity, background-position;
+}
+
+/* Default tile size for preview chips */
+.wall-tile { background: var(--bg-1); }
+
+/* =================================================================
+   01 — none (pure black)
+   ================================================================= */
+body[data-wallpaper="none"] #wallpaper { background: #000; }
+.wall-tile[data-wallpaper="none"]      { background: #000; }
+
+/* =================================================================
+   02 — aurora (flowing teal/violet)
+   ================================================================= */
+body[data-wallpaper="aurora"] #wallpaper {
+  background:
+    radial-gradient(700px 400px at var(--mx) var(--my), rgba(94,234,212,0.18), transparent 60%),
+    radial-gradient(900px 500px at calc(100% - var(--mx)) calc(100% - var(--my)), rgba(167,139,250,0.18), transparent 60%),
+    linear-gradient(135deg, #02060e 0%, #050912 100%);
+}
+.wall-tile[data-wallpaper="aurora"] {
+  background:
+    radial-gradient(60% 80% at 30% 30%, rgba(94,234,212,0.45), transparent 60%),
+    radial-gradient(60% 80% at 70% 70%, rgba(167,139,250,0.45), transparent 60%),
+    #050912;
+}
+
+/* =================================================================
+   03 — sunset (warm pink/orange)
+   ================================================================= */
+body[data-wallpaper="sunset"] #wallpaper {
+  background:
+    radial-gradient(800px 500px at var(--mx) calc(var(--my) * 0.5), rgba(251, 113, 133, 0.18), transparent 60%),
+    radial-gradient(900px 500px at calc(100% - var(--mx)) 90%, rgba(251, 191, 36, 0.16), transparent 60%),
+    linear-gradient(180deg, #0a0309 0%, #0a0504 100%);
+}
+.wall-tile[data-wallpaper="sunset"] {
+  background:
+    radial-gradient(70% 100% at 30% 0%, rgba(251,113,133,0.55), transparent 60%),
+    radial-gradient(70% 100% at 70% 100%, rgba(251,191,36,0.45), transparent 60%),
+    #0a0504;
+}
+
+/* =================================================================
+   04 — mint (soft green)
+   ================================================================= */
+body[data-wallpaper="mint"] #wallpaper {
+  background:
+    radial-gradient(700px 500px at var(--mx) var(--my), rgba(52, 211, 153, 0.18), transparent 60%),
+    radial-gradient(900px 500px at calc(100% - var(--mx)) 80%, rgba(110, 231, 183, 0.12), transparent 60%),
+    #040908;
+}
+.wall-tile[data-wallpaper="mint"] {
+  background:
+    radial-gradient(80% 80% at 50% 50%, rgba(52,211,153,0.5), transparent 70%),
+    #040908;
+}
+
+/* =================================================================
+   05 — plasma (deep red/magenta)
+   ================================================================= */
+body[data-wallpaper="plasma"] #wallpaper {
+  background:
+    radial-gradient(700px 500px at var(--mx) var(--my), rgba(244, 63, 94, 0.20), transparent 60%),
+    radial-gradient(900px 500px at calc(100% - var(--mx)) calc(100% - var(--my)), rgba(217, 70, 239, 0.18), transparent 60%),
+    #0a0207;
+}
+.wall-tile[data-wallpaper="plasma"] {
+  background:
+    radial-gradient(60% 80% at 25% 25%, rgba(244,63,94,0.55), transparent 60%),
+    radial-gradient(60% 80% at 75% 75%, rgba(217,70,239,0.55), transparent 60%),
+    #0a0207;
+}
+
+/* =================================================================
+   06 — mesh dots (grid that warps near mouse)
+   ================================================================= */
+body[data-wallpaper="mesh-dots"] #wallpaper {
+  background:
+    radial-gradient(400px 400px at var(--mx) var(--my), rgba(255,255,255,0.08), transparent 70%),
+    radial-gradient(circle at center, rgba(255,255,255,0.12) 1px, transparent 1.5px) 0 0 / 24px 24px,
+    #050608;
+}
+.wall-tile[data-wallpaper="mesh-dots"] {
+  background:
+    radial-gradient(circle at center, rgba(255,255,255,0.25) 1px, transparent 2px) 0 0 / 12px 12px,
+    #050608;
+}
+
+/* =================================================================
+   07 — synthwave (retro perspective grid)
+   ================================================================= */
+body[data-wallpaper="synthwave"] #wallpaper {
+  background:
+    radial-gradient(60% 60% at 50% 100%, rgba(244, 63, 94, 0.20), transparent 70%),
+    linear-gradient(180deg, transparent 60%, rgba(167, 139, 250, 0.15) 100%),
+    linear-gradient(rgba(167,139,250,0.18) 1px, transparent 1px) 0 0 / 100% 60px,
+    linear-gradient(90deg, rgba(167,139,250,0.18) 1px, transparent 1px) 0 0 / 60px 100%,
+    #04030a;
+  background-attachment: fixed;
+}
+.wall-tile[data-wallpaper="synthwave"] {
+  background:
+    linear-gradient(180deg, rgba(244,63,94,0.4), transparent 70%),
+    linear-gradient(rgba(167,139,250,0.4) 1px, transparent 1px) 0 0 / 100% 12px,
+    linear-gradient(90deg, rgba(167,139,250,0.4) 1px, transparent 1px) 0 0 / 12px 100%,
+    #04030a;
+}
+
+/* =================================================================
+   08 — galaxy (canvas-rendered star particles)
+   Background fill only; canvas added by JS.
+   ================================================================= */
+body[data-wallpaper="galaxy"] #wallpaper {
+  background:
+    radial-gradient(600px 400px at 50% 50%, rgba(99, 102, 241, 0.10), transparent 70%),
+    radial-gradient(ellipse at center, #03030a 0%, #000000 100%);
+}
+.wall-tile[data-wallpaper="galaxy"] {
+  background:
+    radial-gradient(80% 80% at 50% 50%, rgba(99,102,241,0.3), transparent 70%),
+    radial-gradient(circle at 20% 30%, white 0.5px, transparent 1px) 0 0 / 30px 30px,
+    radial-gradient(circle at 70% 70%, white 0.5px, transparent 1px) 0 0 / 40px 40px,
+    #000;
+}
+
+/* =================================================================
+   09 — liquid (blob that follows cursor)
+   ================================================================= */
+body[data-wallpaper="liquid"] #wallpaper {
+  isolation: isolate;
+  background:
+    radial-gradient(900px 680px at var(--mx) var(--my), rgba(70, 146, 255, .16), transparent 68%),
+    radial-gradient(1100px 780px at 82% 8%, rgba(98, 72, 210, .18), transparent 66%),
+    linear-gradient(155deg, #050814 0%, #080d1a 45%, #05070e 100%);
+}
+
+body[data-wallpaper="liquid"] #wallpaper::before {
+  content: '';
+  position: absolute;
+  inset: -8%;
+  z-index: 0;
+  background:
+    radial-gradient(42% 54% at 18% 32%, rgba(28, 132, 255, .68), transparent 70%),
+    radial-gradient(40% 50% at 78% 28%, rgba(111, 78, 222, .52), transparent 72%),
+    radial-gradient(34% 42% at 66% 82%, rgba(35, 180, 203, .34), transparent 72%),
+    radial-gradient(25% 34% at 28% 84%, rgba(255, 147, 112, .16), transparent 72%);
+  filter: none;
+  opacity: .64;
+  transform: translate3d(
+    var(--mx-shift, 0px),
+    var(--my-shift, 0px),
+    0
+  ) scale(1.04);
+  transform-origin: center;
+  animation: liquidFieldDrift 24s cubic-bezier(.45, 0, .55, 1) infinite alternate;
+  will-change: transform, opacity;
+}
+
+body[data-wallpaper="liquid"] #wallpaper::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(120deg, rgba(255,255,255,.035), transparent 24%, transparent 72%, rgba(255,255,255,.018)),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+  background-size: auto, 180px 180px;
+  mix-blend-mode: normal;
+  opacity: .08;
+}
+
+@keyframes liquidFieldDrift {
+  0% {
+    transform: translate3d(
+      calc(var(--mx-shift, 0px) - 1.5%),
+      calc(var(--my-shift, 0px) - .5%),
+      0
+    ) scale(1.04);
+    opacity: .66;
+  }
+  100% {
+    transform: translate3d(
+      calc(var(--mx-shift, 0px) + 1.5%),
+      calc(var(--my-shift, 0px) + .5%),
+      0
+    ) scale(1.08);
+    opacity: .78;
+  }
+}
+
+.wall-tile[data-wallpaper="liquid"] {
+  background:
+    radial-gradient(70% 90% at 18% 32%, rgba(28,132,255,.78), transparent 68%),
+    radial-gradient(72% 92% at 82% 28%, rgba(111,78,222,.7), transparent 68%),
+    radial-gradient(55% 70% at 60% 90%, rgba(35,180,203,.5), transparent 70%),
+    #070b16;
+}
+
+/* =================================================================
+   10 — carbon (dark carbon-fiber weave)
+   ================================================================= */
+body[data-wallpaper="carbon"] #wallpaper {
+  background:
+    radial-gradient(500px 500px at var(--mx) var(--my), rgba(255,255,255,0.025), transparent 60%),
+    repeating-linear-gradient(45deg, #0a0c10 0 4px, #0e1116 4px 8px),
+    repeating-linear-gradient(-45deg, transparent 0 4px, rgba(255,255,255,0.02) 4px 8px),
+    #07090c;
+}
+.wall-tile[data-wallpaper="carbon"] {
+  background:
+    repeating-linear-gradient(45deg, #1a1d24 0 3px, #232730 3px 6px),
+    repeating-linear-gradient(-45deg, transparent 0 3px, rgba(255,255,255,0.05) 3px 6px);
+}
+
+/* =================================================================
+   11 — rain (canvas — vertical lines falling, no mouse hint)
+   ================================================================= */
+body[data-wallpaper="rain"] #wallpaper {
+  background: #000;
+}
+.wall-tile[data-wallpaper="rain"] {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 8px, rgba(56,189,248,0.6) 8px 9px),
+    #050810;
+}
+
+/* =================================================================
+   12 — bubbles (canvas — rising circles)
+   ================================================================= */
+body[data-wallpaper="bubbles"] #wallpaper {
+  background:
+    radial-gradient(600px 600px at var(--mx) var(--my), rgba(56, 189, 248, 0.08), transparent 60%),
+    linear-gradient(180deg, #020306 0%, #040810 100%);
+}
+.wall-tile[data-wallpaper="bubbles"] {
+  background:
+    radial-gradient(20% 20% at 25% 75%, rgba(255,255,255,0.6), transparent 70%),
+    radial-gradient(15% 15% at 70% 60%, rgba(255,255,255,0.4), transparent 70%),
+    radial-gradient(10% 10% at 50% 30%, rgba(255,255,255,0.5), transparent 70%),
+    #040810;
+}
+
+/* =================================================================
+   13 — neon (radial lines from mouse)
+   ================================================================= */
+body[data-wallpaper="neon"] #wallpaper {
+  background:
+    radial-gradient(600px 600px at var(--mx) var(--my), rgba(56, 189, 248, 0.28), transparent 55%),
+    repeating-conic-gradient(from 0deg at var(--mx) var(--my),
+       rgba(56,189,248,0.04) 0deg 4deg,
+       transparent 4deg 12deg),
+    #020308;
+}
+.wall-tile[data-wallpaper="neon"] {
+  background:
+    radial-gradient(50% 50% at 50% 50%, rgba(56,189,248,0.55), transparent 60%),
+    repeating-conic-gradient(from 0deg at 50% 50%, rgba(56,189,248,0.25) 0deg 6deg, transparent 6deg 16deg),
+    #020308;
+}
+
+/* =================================================================
+   14 — cyber (perspective grid that tilts with mouse)
+   ================================================================= */
+body[data-wallpaper="cyber"] #wallpaper {
+  perspective: 800px;
+}
+body[data-wallpaper="cyber"] #wallpaper::before {
+  content: '';
+  position: absolute; inset: -20% -20%;
+  background:
+    linear-gradient(rgba(56, 189, 248, 0.22) 1px, transparent 1px) 0 0 / 100% 50px,
+    linear-gradient(90deg, rgba(56, 189, 248, 0.22) 1px, transparent 1px) 0 0 / 50px 100%;
+  transform-origin: center bottom;
+  transform: rotateX(60deg) translateY(20%) rotateZ(calc(var(--mx-norm, 0) * 4deg));
+  background-color: #02060c;
+}
+body[data-wallpaper="cyber"] #wallpaper::after {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, #02060c 0%, transparent 30%),
+    radial-gradient(800px 600px at 50% 50%, rgba(167, 139, 250, 0.15), transparent 70%);
+}
+.wall-tile[data-wallpaper="cyber"] {
+  background:
+    linear-gradient(rgba(56,189,248,0.4) 1px, transparent 1px) 0 0 / 100% 10px,
+    linear-gradient(90deg, rgba(56,189,248,0.4) 1px, transparent 1px) 0 0 / 10px 100%,
+    #02060c;
+}
+
+/* =================================================================
+   15 — conic (rotating conic gradient)
+   ================================================================= */
+body[data-wallpaper="conic"] #wallpaper {
+  background:
+    conic-gradient(from calc(var(--mx-norm, 0) * 30deg) at var(--mx) var(--my),
+      rgba(99,102,241,0.20),
+      rgba(20,184,166,0.20),
+      rgba(244,114,182,0.20),
+      rgba(99,102,241,0.20)
+    ),
+    #020208;
+  animation: conicSpin 20s linear infinite;
+}
+@keyframes conicSpin { to { filter: hue-rotate(360deg); } }
+.wall-tile[data-wallpaper="conic"] {
+  background:
+    conic-gradient(from 0deg at 50% 50%,
+      rgba(99,102,241,0.6),
+      rgba(20,184,166,0.6),
+      rgba(244,114,182,0.6),
+      rgba(99,102,241,0.6));
+}
+
+/* =================================================================
+   16 — orbs (large blurred orbs drifting)
+   ================================================================= */
+body[data-wallpaper="orbs"] #wallpaper {
+  background: #02030a;
+  overflow: hidden;
+}
+body[data-wallpaper="orbs"] #wallpaper::before,
+body[data-wallpaper="orbs"] #wallpaper::after {
+  content: '';
+  position: absolute;
+  width: 600px; height: 600px;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+}
+body[data-wallpaper="orbs"] #wallpaper::before {
+  background: radial-gradient(circle, #6366f1, transparent 70%);
+  left: calc(var(--mx) - 300px);
+  top: calc(var(--my) - 300px);
+  transition: left .8s ease-out, top .8s ease-out;
+}
+body[data-wallpaper="orbs"] #wallpaper::after {
+  background: radial-gradient(circle, #14b8a6, transparent 70%);
+  right: calc(100% - var(--mx) - 300px);
+  bottom: calc(100% - var(--my) - 300px);
+  transition: right .8s ease-out, bottom .8s ease-out;
+}
+.wall-tile[data-wallpaper="orbs"] {
+  background:
+    radial-gradient(50% 50% at 30% 30%, #6366f1, transparent 70%),
+    radial-gradient(50% 50% at 70% 70%, #14b8a6, transparent 70%),
+    #02030a;
+}
+
+/* =================================================================
+   17 — wave (slow horizontal wave bands)
+   ================================================================= */
+body[data-wallpaper="wave"] #wallpaper {
+  background:
+    radial-gradient(800px 400px at var(--mx) var(--my), rgba(56, 189, 248, 0.12), transparent 60%),
+    linear-gradient(180deg, #020610 0%, #03081a 100%);
+}
+body[data-wallpaper="wave"] #wallpaper::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(180deg,
+      transparent 0 80px,
+      rgba(56, 189, 248, 0.06) 80px 82px,
+      transparent 82px 160px);
+  animation: waveScroll 12s linear infinite;
+}
+@keyframes waveScroll {
+  from { background-position: 0 0; }
+  to   { background-position: 0 160px; }
+}
+.wall-tile[data-wallpaper="wave"] {
+  background:
+    repeating-linear-gradient(180deg, transparent 0 8px, rgba(56,189,248,0.4) 8px 9px),
+    #03081a;
+}
+
+/* =================================================================
+   18 — mesh (animated mesh gradient)
+   ================================================================= */
+body[data-wallpaper="mesh"] #wallpaper {
+  background:
+    radial-gradient(at 15% 20%, rgba(99,102,241,0.20) 0%, transparent 50%),
+    radial-gradient(at 85% 25%, rgba(20,184,166,0.20) 0%, transparent 50%),
+    radial-gradient(at 50% 80%, rgba(244,114,182,0.20) 0%, transparent 50%),
+    radial-gradient(at var(--mx) var(--my), rgba(251, 191, 36, 0.14) 0%, transparent 40%),
+    #04040a;
+  animation: meshShift 18s ease-in-out infinite alternate;
+}
+@keyframes meshShift {
+  0%   { background-position: 0% 0%, 0% 0%, 0% 0%, 0% 0%, 0 0; }
+  100% { background-position: 8% 5%, -8% 6%, 4% -4%, 0% 0%, 0 0; }
+}
+.wall-tile[data-wallpaper="mesh"] {
+  background:
+    radial-gradient(at 20% 20%, rgba(99,102,241,0.6), transparent 60%),
+    radial-gradient(at 80% 30%, rgba(20,184,166,0.6), transparent 60%),
+    radial-gradient(at 50% 80%, rgba(244,114,182,0.6), transparent 60%),
+    #04040a;
+}
+
+/* =================================================================
+   19 — fire (warm flicker with mouse)
+   ================================================================= */
+body[data-wallpaper="fire"] #wallpaper {
+  background:
+    radial-gradient(700px 500px at var(--mx) calc(100% - var(--my) * 0.3), rgba(251, 146, 60, 0.20), transparent 60%),
+    radial-gradient(900px 600px at 50% 110%, rgba(244, 63, 94, 0.22), transparent 60%),
+    linear-gradient(180deg, #0a0202 0%, #0e0505 100%);
+  animation: fireFlicker 2.4s ease-in-out infinite alternate;
+}
+@keyframes fireFlicker {
+  0%   { filter: brightness(1) hue-rotate(0deg); }
+  50%  { filter: brightness(1.06) hue-rotate(-4deg); }
+  100% { filter: brightness(0.96) hue-rotate(4deg); }
+}
+.wall-tile[data-wallpaper="fire"] {
+  background:
+    radial-gradient(80% 100% at 50% 100%, rgba(251,146,60,0.7), transparent 60%),
+    radial-gradient(80% 100% at 50% 90%, rgba(244,63,94,0.5), transparent 60%),
+    #0e0505;
+}

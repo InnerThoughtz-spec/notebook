@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- API base — this static launcher lives on github.io; all API + WS traffic goes to the Worker on workers.dev -->
+  <script>window.__API_BASE = "https://journal.innerthoughtz00.workers.dev/dash-eb83f13e751c";</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Workspace</title>
+  <!-- PWA: lets ChromeOS / Chrome / Edge install this as a native-feeling
+       app from the address bar. No app store, no admin rights, no Linux
+       subsystem. Just open the URL in Chrome and click "Install". -->
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#080b14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Workspace" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icons/icon-512.png" />
+  <link rel="stylesheet" href="css/innerPersonal.css" />
+  <link rel="stylesheet" href="css/wallpapers.css" />
+  <link rel="stylesheet" href="css/refresh.css" />
+
+  <!-- Custom logo, used inline so it inherits currentColor. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="brand-logo" viewBox="0 0 64 64">
+      <!-- Outer diamond ring -->
+      <path d="M32 4 L60 32 L32 60 L4 32 Z" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/>
+      <!-- Concentric inner diamond, half-rotated for depth -->
+      <path d="M32 14 L50 32 L32 50 L14 32 Z" fill="none" stroke="currentColor" stroke-width="1.6" opacity="0.5"/>
+      <!-- The sweep — half ring + dot, the signature mark -->
+      <path d="M 20 32 A 12 12 0 1 1 44 32" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/>
+      <circle cx="44" cy="32" r="2.6" fill="currentColor"/>
+    </symbol>
+  </svg>
+</head>
+<body data-wallpaper="liquid">
+
+  <!-- ===== Login overlay — shown on boot until POST /api/login succeeds.
+        Sits above everything (z-index 2000) so the rest of the app stays
+        invisible until the user is authenticated. JS in app.js hides it
+        once /api/auth/check returns 200. ===== -->
+  <div id="login-overlay" class="login-overlay" hidden>
+    <form id="login-form" class="login-card" autocomplete="off">
+      <svg class="login-logo" aria-label="logo"><use href="#brand-logo"/></svg>
+      <h1 class="login-title">Sign in</h1>
+      <div class="login-sub">Use your private account to continue.</div>
+      <label class="login-field">
+        <span class="login-label">Username</span>
+        <input type="text" id="login-user" autocomplete="off" required spellcheck="false" autocapitalize="off" />
+      </label>
+      <label class="login-field">
+        <span class="login-label">Password</span>
+        <input type="password" id="login-pass" autocomplete="new-password" required />
+      </label>
+      <div id="login-error" class="login-error" hidden></div>
+      <button type="submit" class="btn btn-primary login-submit" id="login-submit">Log in</button>
+    </form>
+  </div>
+
+  <!-- ===== Boot splash (removed by JS once interface is ready) ===== -->
+  <div id="boot-splash">
+    <div class="ring r1"></div>
+    <div class="ring r2"></div>
+    <div class="ring r3"></div>
+    <svg class="logo" aria-label="logo"><use href="#brand-logo"/></svg>
+    <div class="tag">Workspace</div>
+    <div class="scan"></div>
+  </div>
+
+  <!-- ===== Wallpaper layer ===== -->
+  <div id="wallpaper"></div>
+
+  <div class="app">
+
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar">
+      <div class="brand" title="Workspace">
+        <svg class="brand-mark" aria-label="logo"><use href="#brand-logo"/></svg>
+        <span class="brand-name">Workspace</span>
+      </div>
+
+      <nav class="nav">
+        <div class="nav-item active" data-view="library">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          Library
+        </div>
+        <div class="nav-item" data-view="tutorials">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          Tutorials
+        </div>
+        <div class="nav-item" data-view="setup">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.31.36.49.83.49 1.31V11a2 2 0 1 1 0 4h-.09c-.48 0-.95.18-1.31.49z"/></svg>
+          Setup
+        </div>
+        <div class="nav-item" data-view="quality">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Quality
+        </div>
+        <div class="nav-item" data-view="customization">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2a10 10 0 1 0 0 20 4 4 0 0 0 0-8 2 2 0 0 1 0-4h2a6 6 0 0 0 0-12c-.71 0-1.37.13-2 .35"/></svg>
+          Customize
+        </div>
+
+        <div class="nav-section">Tools</div>
+        <div class="nav-item" id="nav-control-pc">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+          Desktop
+        </div>
+        <div class="nav-item" data-view="music" id="nav-spotify" title="In-launcher Spotify player. Uses your Premium account, plays through this tab.">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          Music
+        </div>
+        <div class="nav-item" data-view="phone">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          Phone
+        </div>
+        <div class="nav-item" id="nav-host-settings" title="Open the streaming host's web config (Apollo or Sunshine, whichever is active). Pair Moonlight clients, configure capture, set apps, etc.">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          Host settings
+        </div>
+        <!-- "Install as app" — only visible when Chrome/Edge has fired the
+             beforeinstallprompt event. On ChromeOS this adds Workspace to
+             your launcher shelf as a standalone app window. -->
+        <div class="nav-item" id="nav-install-app" hidden title="Install Workspace as a standalone app on this device. ChromeOS adds it to your launcher; Windows/Mac to Start/Dock.">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M5 21h14"/></svg>
+          Install as app
+        </div>
+        <div class="nav-item" id="nav-refresh">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh library
+        </div>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="status-pill"><span class="status-dot" id="sun-dot"></span><span id="sun-label">Checking…</span></div>
+        <div id="qr-block" style="margin-top:14px;display:none">
+          <div style="font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--text-faint);margin-bottom:6px">Scan on phone</div>
+          <img id="qr-img" alt="QR for phone" style="width:100%;max-width:140px;border-radius:6px;background:#fff;padding:6px"/>
+          <div id="qr-host" style="font-size:10px;color:var(--text-faint);margin-top:4px;word-break:break-all"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== Main ===== -->
+    <main class="main">
+
+      <!-- Library view -->
+      <section data-view="library">
+        <div class="topbar">
+          <div>
+            <div class="eyebrow">LIBRARY</div>
+            <h1>Games</h1>
+            <div class="sub" id="lib-sub">Loading…</div>
+          </div>
+          <div class="search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input id="search" type="text" placeholder="Search library" />
+          </div>
+        </div>
+        <div class="ready-panel">
+          <div class="ready-copy">
+            <div class="ready-status"><span class="ready-pulse"></span><span id="ready-label">Checking your host</span></div>
+            <h2>Remote desktop</h2>
+            <p id="ready-summary">Connect to your PC or launch a game from the library.</p>
+            <div class="ready-actions">
+              <button class="btn btn-primary btn-large" id="hero-control-pc">Open desktop</button>
+              <button class="btn btn-large" data-goto="quality">Stream settings</button>
+            </div>
+          </div>
+          <div class="ready-metrics">
+            <div class="metric"><span>Host</span><strong id="ready-host">Checking…</strong></div>
+            <div class="metric"><span>Profile</span><strong>Smart · low latency</strong></div>
+            <div class="metric"><span>Transport</span><strong>Encrypted WebRTC</strong></div>
+          </div>
+        </div>
+        <div id="library" class="grid"></div>
+      </section>
+
+      <!-- Game detail view (the 2-step launch — opens when you click a card) -->
+      <section data-view="game-detail" hidden>
+        <div class="detail" id="game-detail">
+          <div class="detail-hero" id="detail-hero"></div>
+          <button class="btn detail-back" id="detail-back">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+            Back
+          </button>
+          <div class="detail-content">
+            <div class="detail-meta" id="detail-meta">App ID · Path</div>
+            <h2 class="detail-title" id="detail-title">Game</h2>
+            <div class="codec-row">
+              <label class="codec-opt"><input type="radio" name="d-codec" value="h264" checked> H.264 <small>works everywhere</small></label>
+              <label class="codec-opt"><input type="radio" name="d-codec" value="hevc"> HEVC <small>better quality</small></label>
+              <label class="codec-opt"><input type="radio" name="d-codec" value="av1"> AV1 <small>40-series GPU</small></label>
+            </div>
+            <!-- Per-game quality override. "Use global" inherits whatever's
+                 in the Quality view; the lower presets apply just for this
+                 game so heavy titles (BeamNG, Cyberpunk) get smoother
+                 streaming without dropping global quality. -->
+            <div class="codec-row" id="d-quality-row">
+              <label class="codec-opt"><input type="radio" name="d-quality" value="inherit" checked> Use global <small>quality from settings</small></label>
+              <label class="codec-opt"><input type="radio" name="d-quality" value="low"> Low <small>540p30 · 1.4 Mbps — coolest</small></label>
+              <label class="codec-opt"><input type="radio" name="d-quality" value="medium"> Medium <small>720p30 · 2.2 Mbps</small></label>
+              <label class="codec-opt"><input type="radio" name="d-quality" value="high"> High <small>720p60 · 3.5 Mbps</small></label>
+            </div>
+            <div class="detail-actions">
+              <button class="btn btn-primary" id="detail-stream">▶  Play in browser</button>
+              <button class="btn" id="detail-register">Register with Sunshine</button>
+            </div>
+            <div id="detail-result"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quality view -->
+      <section data-view="quality" hidden>
+        <div class="topbar"><div><h1>Stream quality</h1><div class="sub">Settings apply to every new session. Pick a preset or customize. Changes take effect on the next stream you start.</div></div></div>
+
+        <div class="smart-quality-card">
+          <div>
+            <div class="eyebrow">RECOMMENDED</div>
+            <h3>Smart optimization</h3>
+            <p id="q-smart-copy">Detecting this device and network…</p>
+          </div>
+          <label class="switch" title="Automatically choose a stable profile for each device">
+            <input type="checkbox" id="q-adaptive" checked />
+            <span></span>
+          </label>
+        </div>
+
+        <div class="setup-step">
+          <h3>Presets</h3>
+          <div class="row" style="gap:8px;flex-wrap:wrap">
+            <button class="btn quality-preset" data-preset="potato">Data saver<small>480p30 · 0.9 Mbps · coolest</small></button>
+            <button class="btn quality-preset" data-preset="low">Stable<small>540p30 · 1.4 Mbps · low power</small></button>
+            <button class="btn quality-preset" data-preset="medium">Balanced<small>720p30 · 2.2 Mbps · efficient</small></button>
+            <button class="btn quality-preset" data-preset="high">Smooth<small>720p60 · 3.5 Mbps · responsive</small></button>
+            <button class="btn quality-preset" data-preset="max">Maximum<small>1080p60 · 6 Mbps · demanding</small></button>
+          </div>
+        </div>
+
+        <div class="setup-step">
+          <h3>Custom</h3>
+          <div class="row">
+            <div>
+              <div class="label">Resolution</div>
+              <select class="input" id="q-res">
+                <option value="854x480">480p (854×480)</option>
+                <option value="960x540">540p (960×540)</option>
+                <option value="1280x720">720p (1280×720)</option>
+                <option value="1920x1080">1080p (1920×1080)</option>
+                <option value="2560x1440">1440p (2560×1440)</option>
+              </select>
+            </div>
+            <div>
+              <div class="label">Framerate</div>
+              <select class="input" id="q-fps">
+                <option value="30">30 fps</option>
+                <option value="60">60 fps</option>
+                <option value="120">120 fps</option>
+              </select>
+            </div>
+            <div>
+              <div class="label">NVENC preset</div>
+              <select class="input" id="q-preset">
+                <option value="p1">p1 — fastest (lowest latency)</option>
+                <option value="p3">p3 — balanced</option>
+                <option value="p5">p5 — sharper (slight delay)</option>
+                <option value="p7">p7 — best quality (highest delay)</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:18px">
+            <div class="label">Bitrate <span id="q-bitrate-label" style="float:right;color:var(--text);font-weight:500;text-transform:none;letter-spacing:0">3500 kbps</span></div>
+            <input type="range" id="q-bitrate" min="500" max="20000" step="100" value="3500" />
+          </div>
+          <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line-1)">
+            <label style="display:flex;align-items:flex-start;gap:12px;cursor:pointer">
+              <input type="checkbox" id="q-cpu-encode" style="margin-top:3px" />
+              <div>
+                <div class="label" style="margin-bottom:4px">CPU encoder (libx264)</div>
+                <div style="font-size:12px;color:var(--text-dim);line-height:1.5">
+                  Off (default): NVENC on the GPU — fast and free if the GPU is idle.<br>
+                  On: encode on the CPU instead. Use this if a heavy game (Forza, Cyberpunk, BeamNG) saturates your GPU and the stream freezes — the game gets the entire GPU, encode runs on CPU. Costs ~3-4 CPU cores constantly.
+                </div>
+              </div>
+            </label>
+          </div>
+          <div style="margin-top:18px">
+            <button class="btn btn-primary" id="q-save">Save</button>
+            <span id="q-save-result" style="margin-left:14px;font-size:12px;color:var(--text-dim)"></span>
+          </div>
+        </div>
+
+        <div class="setup-step">
+          <h3>Current settings</h3>
+          <div id="q-current" style="font-family:'JetBrains Mono','Courier New',monospace;font-size:12px;color:var(--text-dim);line-height:1.8">Loading…</div>
+        </div>
+      </section>
+
+      <!-- Customization view -->
+      <section data-view="customization" hidden>
+        <div class="topbar">
+          <div>
+            <h1>Customize</h1>
+            <div class="sub">Pick an accent color and a live wallpaper. Settings are saved to this browser.</div>
+          </div>
+          <button class="btn" id="cust-reset">Reset to default</button>
+        </div>
+
+        <div class="step-block">
+          <h3>Accent color</h3>
+          <div class="desc">Tints buttons, highlights, and active states.</div>
+          <div class="color-swatches" id="color-swatches">
+            <!-- Populated by JS -->
+          </div>
+          <div style="margin-top:14px;display:flex;align-items:center;gap:12px">
+            <div class="label" style="margin:0">Custom</div>
+            <input type="color" id="custom-color" value="#6ab0ff" />
+          </div>
+        </div>
+
+        <div class="step-block">
+          <h3>Wallpaper</h3>
+          <div class="desc">Reacts to your cursor. Pick one — applies live across the app.</div>
+          <div class="wall-grid" id="wall-grid">
+            <!-- Populated by JS from wallpapers.js -->
+          </div>
+        </div>
+
+        <div class="step-block">
+          <h3>Surface effects</h3>
+          <div class="desc">Adjust the frost and refraction of navigation and controls.</div>
+          <div>
+            <div class="label">Material intensity <span id="glass-label" style="float:right;color:var(--text);font-weight:500;text-transform:none;letter-spacing:0">32 px</span></div>
+            <input type="range" id="glass-intensity" min="18" max="44" step="1" value="32" />
+          </div>
+        </div>
+      </section>
+
+      <!-- Music (Spotify) view -->
+      <section data-view="music" hidden>
+        <div class="topbar">
+          <div>
+            <h1>Music</h1>
+            <div class="sub">Spotify · in-launcher player</div>
+          </div>
+          <div id="sp-user" class="sp-user" hidden>
+            <img id="sp-avatar" alt="" />
+            <span id="sp-name"></span>
+            <button class="btn btn-ghost" id="sp-logout">Disconnect</button>
+          </div>
+        </div>
+
+        <!-- State 1: Spotify Client ID not yet configured -->
+        <div id="sp-needs-setup" class="notice warn" hidden>
+          You haven't set up the Spotify integration yet.
+          <a href="#" data-goto="setup">Open Setup → Spotify</a> to add your Client ID (3-minute one-time setup).
+        </div>
+
+        <!-- State 2: Configured but not authenticated -->
+        <div id="sp-needs-auth" hidden>
+          <div class="step-block" style="text-align:center;padding:48px 24px">
+            <svg width="56" height="56" viewBox="0 0 24 24" fill="currentColor" style="opacity:0.9"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+            <h3 style="margin:16px 0 4px;font-size:18px;font-weight:600">Connect your Spotify</h3>
+            <p style="color:var(--text-dim);font-size:13px;margin:0 0 22px;line-height:1.55">One-click OAuth. Plays through this browser using your Premium account. The launcher never sees your password — Spotify hands us a temporary access token.</p>
+            <button class="btn btn-primary" id="sp-connect">Connect Spotify</button>
+            <div id="sp-auth-error" style="margin-top:14px;color:var(--danger);font-size:12px"></div>
+          </div>
+        </div>
+
+        <!-- State 3: Connected and playing -->
+        <div id="sp-app" hidden>
+          <div class="sp-tabs">
+            <button class="sp-tab active" data-sp-tab="home">Home</button>
+            <button class="sp-tab" data-sp-tab="library">Library</button>
+            <button class="sp-tab" data-sp-tab="search">Search</button>
+          </div>
+
+          <!-- Home tab — recently played + top tracks -->
+          <div class="sp-pane" data-sp-pane="home">
+            <h3 class="sp-section-h">Recently played</h3>
+            <div class="sp-row" id="sp-recent"></div>
+            <h3 class="sp-section-h">Top tracks this month</h3>
+            <div class="sp-tracklist" id="sp-top"></div>
+          </div>
+
+          <!-- Library tab — playlists -->
+          <div class="sp-pane" data-sp-pane="library" hidden>
+            <div class="sp-grid" id="sp-playlists"></div>
+            <h3 class="sp-section-h" style="margin-top:32px">Liked songs</h3>
+            <div class="sp-tracklist" id="sp-liked"></div>
+          </div>
+
+          <!-- Search tab -->
+          <div class="sp-pane" data-sp-pane="search" hidden>
+            <div class="search" style="max-width:520px;margin-bottom:18px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="sp-search-input" type="text" placeholder="Songs, artists, playlists…" />
+            </div>
+            <div class="sp-tracklist" id="sp-search-results"></div>
+          </div>
+
+          <!-- Single-playlist detail pane (shown when you click a playlist) -->
+          <div class="sp-pane" data-sp-pane="playlist-detail" hidden>
+            <button class="btn btn-ghost" id="sp-pl-back" style="margin-bottom:14px">← Back</button>
+            <div class="sp-pl-header">
+              <img id="sp-pl-art" alt="" />
+              <div>
+                <div class="sp-pl-kind">PLAYLIST</div>
+                <h2 id="sp-pl-title">…</h2>
+                <div id="sp-pl-meta" class="sp-pl-meta"></div>
+                <button class="btn btn-primary" id="sp-pl-play" style="margin-top:14px">▶ Play</button>
+              </div>
+            </div>
+            <div class="sp-tracklist" id="sp-pl-tracks" style="margin-top:24px"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Phone view -->
+      <section data-view="phone" hidden>
+        <div class="topbar"><div><h1>Phone (scrcpy)</h1><div class="sub">Mirror + control your Android phone from the host PC. The phone window is captured by the desktop stream, so you can use it from any browser.</div></div></div>
+
+        <div class="setup-step">
+          <h3>Step 1  ·  One-time wireless ADB pairing</h3>
+          <div class="desc">On your phone: Settings → Developer Options → Wireless debugging → "Pair device with pairing code". Note the IP, port, and 6-digit code. Then fill in below:</div>
+          <div class="row" style="margin-top:10px">
+            <div><div class="label">Phone IP</div><input class="input" id="adb-host" placeholder="192.168.1.42" /></div>
+            <div><div class="label">Pair port</div><input class="input" id="adb-pair-port" placeholder="37123" /></div>
+            <div><div class="label">6-digit code</div><input class="input" id="adb-pair-code" placeholder="123456" maxlength="6" /></div>
+          </div>
+          <div style="margin-top:14px"><button class="btn" id="adb-pair-btn">Pair</button> <span id="adb-pair-result" style="margin-left:12px;font-size:12px;color:var(--text-dim)"></span></div>
+        </div>
+
+        <div class="setup-step">
+          <h3>Step 2  ·  Connect after pairing</h3>
+          <div class="desc">Same screen on phone — Wireless debugging shows a different IP:Port (the connect port, not pair port). Use that:</div>
+          <div class="row" style="margin-top:10px">
+            <div><div class="label">Phone IP</div><input class="input" id="adb-conn-host" placeholder="192.168.1.42" /></div>
+            <div><div class="label">Connect port</div><input class="input" id="adb-conn-port" placeholder="42351" /></div>
+          </div>
+          <div style="margin-top:14px"><button class="btn" id="adb-connect-btn">Connect</button> <span id="adb-conn-result" style="margin-left:12px;font-size:12px;color:var(--text-dim)"></span></div>
+        </div>
+
+        <div class="setup-step">
+          <h3>Step 3  ·  Launch phone window</h3>
+          <div class="desc">Opens scrcpy on the host PC, showing your phone's screen in a Windows window. Then start a Control PC stream — the phone window will be visible and clickable.</div>
+          <div id="phone-status" class="notice" style="margin-bottom:12px">Checking…</div>
+          <button class="btn btn-primary" id="phone-launch">Launch phone window</button>
+          <button class="btn" id="phone-stop">Stop</button>
+        </div>
+      </section>
+
+      <!-- Tutorials view -->
+      <section data-view="tutorials" hidden>
+        <div class="topbar"><div><h1>Tutorials</h1><div class="sub">Get the cloud launcher running on any browser. Nothing to install on the client.</div></div></div>
+        <div class="tutor-grid" id="tutor-grid"></div>
+      </section>
+
+      <!-- Setup view -->
+      <section data-view="setup" hidden>
+        <div class="topbar"><div><h1>Setup</h1><div class="sub">Connect to Sunshine and your public hostname.</div></div></div>
+        <div id="setup-status" class="notice" style="margin-bottom:16px">Loading status…</div>
+
+        <div class="setup-step">
+          <h3>1  ·  Sunshine connection</h3>
+          <div class="desc">Talks to Sunshine's REST API at <code>https://&lt;host&gt;:&lt;port&gt;</code> using the credentials you set when first opening the Sunshine UI. Your password is stored locally in <code>innerpersonal.config.json</code> on this PC only.</div>
+          <div class="row">
+            <div><div class="label">Host</div><input class="input" id="cfg-host" /></div>
+            <div><div class="label">Port</div><input class="input" id="cfg-port" /></div>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <div><div class="label">Username</div><input class="input" id="cfg-user" autocomplete="off" /></div>
+            <div><div class="label">Password</div><input class="input" id="cfg-pass" type="password" autocomplete="new-password" /></div>
+          </div>
+          <div style="margin-top:14px"><button class="btn btn-primary" id="cfg-save">Save &amp; test</button></div>
+        </div>
+
+        <div class="setup-step">
+          <h3>2  ·  Public hostname (Cloudflare Tunnel)</h3>
+          <div class="desc">Set the hostname your Chromebook will hit (e.g. <code>play.your-domain.com</code>). Leave blank for LAN-only use. See the <a href="#" data-goto="tutorials">tutorial</a> for the full Tunnel walkthrough.</div>
+          <div class="label">Public hostname</div>
+          <input class="input" id="cfg-public" placeholder="play.your-domain.com" />
+          <div style="margin-top:14px"><button class="btn" id="cfg-public-save">Save</button></div>
+        </div>
+
+        <div class="setup-step">
+          <h3>3  ·  Pair with Sunshine</h3>
+          <div class="desc">One-time handshake so the WebRTC bridge can launch games. After pairing, the cert is saved and you don't need to do this again unless you reset Sunshine's pairings.</div>
+          <div id="pair-status" class="notice" style="margin-bottom:12px">Checking pairing status…</div>
+          <div class="row">
+            <button class="btn btn-primary" id="pair-start">Start pairing</button>
+          </div>
+          <div id="pair-pin-row" style="margin-top:14px;display:none">
+            <div class="label">Enter the 4-digit PIN shown by Sunshine</div>
+            <div class="row">
+              <input class="input" id="pair-pin" inputmode="numeric" maxlength="4" placeholder="0000" style="font-size:18px;letter-spacing:8px;text-align:center" />
+              <button class="btn btn-primary" id="pair-pin-submit" style="flex:0 0 auto">Submit PIN</button>
+            </div>
+          </div>
+          <div id="pair-result" style="margin-top:10px"></div>
+        </div>
+
+        <div class="setup-step">
+          <h3>4  ·  Access token <span style="color:var(--text-faint);font-weight:400">(optional)</span></h3>
+          <div class="desc">If your tunnel is public, set a shared secret here. Anyone opening the launcher will need to enter it once — it's stored in their browser. Leave blank to skip.</div>
+          <input class="input" id="cfg-token" type="password" autocomplete="new-password" placeholder="(no token — anyone can access)" />
+          <div style="margin-top:14px"><button class="btn" id="cfg-token-save">Save token</button></div>
+        </div>
+
+        <div class="setup-step">
+          <h3>5  ·  TURN relay <span style="color:var(--text-faint);font-weight:400">(needed for restrictive networks)</span></h3>
+          <div class="desc">WebRTC needs a TURN relay when direct UDP is blocked (school/work WiFi, restrictive mobile carriers). The default public TURN (openrelay.metered.ca) is often blocked or rate-limited. <strong>Best free option:</strong> <a href="https://dash.cloudflare.com/?to=/:account/calls" target="_blank">Cloudflare Realtime TURN</a> — free account, 1 TB/month, very fast. After signup, go to Realtime → TURN → create credentials, paste here:</div>
+          <div style="margin-top:12px"><div class="label">TURN URL</div><input class="input" id="cfg-turn-url" placeholder="turn:turn.cloudflare.com:3478" /></div>
+          <div class="row" style="margin-top:10px">
+            <div><div class="label">Username (TURN key ID)</div><input class="input" id="cfg-turn-user" autocomplete="off" /></div>
+            <div><div class="label">Credential (TURN key)</div><input class="input" id="cfg-turn-cred" type="password" autocomplete="new-password" /></div>
+          </div>
+          <div style="margin-top:14px"><button class="btn" id="cfg-turn-save">Save TURN creds</button> <span id="cfg-turn-result" style="margin-left:12px;font-size:12px;color:var(--text-dim)"></span></div>
+
+          <div style="margin-top:22px;padding-top:16px;border-top:1px solid var(--line-1)">
+            <div class="label" style="font-weight:700;color:var(--text);font-size:12px">Auto-refresh (recommended) — never deal with expiry again</div>
+            <div class="desc" style="margin-top:8px">Cloudflare Realtime credentials expire every 24h. Instead of pasting fresh ones daily, give the launcher your <strong>master Token ID + API Token</strong> (created at <a href="https://dash.cloudflare.com/?to=/:account/calls" target="_blank">dash.cloudflare.com → Realtime → TURN</a>). It will auto-mint a new 24h credential whenever the current one is about to expire.</div>
+            <div class="row" style="margin-top:12px">
+              <div><div class="label">Cloudflare Token ID</div><input class="input" id="cfg-cf-token-id" autocomplete="off" placeholder="e.g. 2436b9892b361623a08bf18d5d80c1d4" /></div>
+              <div><div class="label">Cloudflare API Token</div><input class="input" id="cfg-cf-api-token" type="password" autocomplete="new-password" placeholder="(secret)" /></div>
+            </div>
+            <div style="margin-top:14px">
+              <button class="btn" id="cfg-cf-save">Save &amp; mint now</button>
+              <span id="cfg-cf-result" style="margin-left:12px;font-size:12px;color:var(--text-dim)"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="setup-step">
+          <h3>6  ·  Spotify (in-launcher player) <span style="color:var(--text-faint);font-weight:400">(optional · Premium required)</span></h3>
+          <div class="desc">Built-in Spotify player using your Premium account. One-time setup:
+            <ol style="margin:10px 0 0;padding-left:22px;line-height:1.7">
+              <li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank">developer.spotify.com/dashboard</a> and log in with your Spotify account.</li>
+              <li>Click <strong>Create app</strong>. Name it whatever (e.g. "My Workspaceer"). Description: anything.</li>
+              <li>Under <strong>Redirect URIs</strong>, click "Add" and paste this exact URL: <code id="sp-redirect-uri" style="background:var(--bg-2);padding:2px 6px;border-radius:4px;cursor:pointer;user-select:all">…loading…</code> <button class="btn btn-ghost" id="sp-copy-uri" style="padding:4px 8px;font-size:11px;min-height:0;margin-left:4px">Copy</button></li>
+              <li>Under <strong>Which API/SDKs are you planning to use</strong>, check <strong>Web API</strong> and <strong>Web Playback SDK</strong>.</li>
+              <li>Save. On the app's page, click <strong>Settings</strong> (top right). Copy the <strong>Client ID</strong> value.</li>
+              <li>Paste it here and Save:</li>
+            </ol>
+          </div>
+          <div style="margin-top:14px">
+            <div class="label">Spotify Client ID</div>
+            <input class="input" id="cfg-spotify-client" placeholder="e.g. a1b2c3d4e5f6789..." autocomplete="off" />
+          </div>
+          <div style="margin-top:14px">
+            <button class="btn btn-primary" id="cfg-spotify-save">Save</button>
+            <span id="cfg-spotify-result" style="margin-left:12px;font-size:12px;color:var(--text-dim)"></span>
+          </div>
+        </div>
+
+        <div class="setup-step">
+          <h3>7  ·  Streaming backend <span style="color:var(--text-faint);font-weight:400">(Sunshine vs Apollo)</span></h3>
+          <div class="desc">
+            <strong>Sunshine</strong> is the original open-source GameStream host. <strong>Apollo</strong> is a Sunshine fork with extra features: per-client app isolation, WGC capture (works for fullscreen-exclusive games that DXGI can't capture), updated virtual display driver. Both speak the same protocol — your Moonlight clients work with either.
+            <br><br>
+            Only one can run at a time (they share ports 47984/47989/47990/47999). Switching requires admin (server must be running elevated).
+          </div>
+          <div id="cfg-backend-status" style="margin-top:14px;font-size:13px;color:var(--text-dim);font-family:'JetBrains Mono','Courier New',monospace">Loading status…</div>
+          <div class="row" style="margin-top:14px;gap:10px;flex-wrap:wrap">
+            <button class="btn" id="cfg-backend-sunshine">Switch to Sunshine</button>
+            <button class="btn" id="cfg-backend-apollo">Switch to Apollo</button>
+            <a class="btn" href="https://workspace.innerthoughtz00.workers.dev/host/" target="_blank">Open host web UI →</a>
+          </div>
+          <div id="cfg-backend-result" style="margin-top:12px;font-size:12px;color:var(--text-dim)"></div>
+        </div>
+      </section>
+    </main>
+
+    <nav class="mobile-nav" aria-label="Primary navigation">
+      <button class="nav-item mobile-nav-item active" data-view="library">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        <span>Library</span>
+      </button>
+      <button class="nav-item mobile-nav-item" id="mobile-control-pc">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        <span>Desktop</span>
+      </button>
+      <button class="nav-item mobile-nav-item" data-view="quality">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span>Quality</span>
+      </button>
+      <button class="nav-item mobile-nav-item" data-view="setup">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.31.36.49.83.49 1.31V11a2 2 0 1 1 0 4h-.09c-.48 0-.95.18-1.31.49z"/></svg>
+        <span>Setup</span>
+      </button>
+      <button class="nav-item mobile-nav-item" id="mobile-more" aria-expanded="false" aria-controls="mobile-more-menu">
+        <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+        <span>More</span>
+      </button>
+    </nav>
+
+    <div class="mobile-more-menu" id="mobile-more-menu" hidden>
+      <div class="mobile-more-title">More</div>
+      <div class="mobile-more-grid">
+        <button class="nav-item mobile-more-item" data-view="tutorials">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+          <span>Tutorials</span>
+        </button>
+        <button class="nav-item mobile-more-item" data-view="customization">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2a10 10 0 1 0 0 20 4 4 0 0 0 0-8 2 2 0 0 1 0-4h2a6 6 0 0 0 0-12c-.71 0-1.37.13-2 .35"/></svg>
+          <span>Customize</span>
+        </button>
+        <button class="nav-item mobile-more-item" data-view="music">
+          <svg class="icon" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.521 17.34c-.24.359-.66.48-1.021.24-2.82-1.74-6.36-2.101-10.561-1.141-.418.122-.779-.179-.899-.539-.12-.421.18-.78.54-.9 4.56-1.021 8.52-.6 11.64 1.32.42.18.479.659.301 1.02zm1.44-3.3c-.301.42-.841.6-1.262.3-3.239-1.98-8.159-2.58-11.939-1.38-.479.12-1.02-.12-1.14-.6-.12-.48.12-1.021.6-1.141C9.6 9.9 15 10.561 18.72 12.84c.361.181.54.78.241 1.2zm.12-3.36C15.24 8.4 8.82 8.16 5.16 9.301c-.6.179-1.2-.181-1.38-.721-.18-.601.18-1.2.72-1.381 4.26-1.26 11.28-1.02 15.721 1.621.539.3.719 1.02.419 1.56-.299.421-1.02.599-1.559.3z"/></svg>
+          <span>Music</span>
+        </button>
+        <button class="nav-item mobile-more-item" data-view="phone">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+          <span>Phone</span>
+        </button>
+        <button class="nav-item mobile-more-item" id="mobile-host-settings">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 1 1-7-7"/><path d="M12 2v4M22 12h-4"/></svg>
+          <span>Host settings</span>
+        </button>
+        <button class="nav-item mobile-more-item" id="mobile-refresh">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          <span>Refresh library</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal kept hidden — JS now navigates to the detail view instead, but
+       the original handlers still reference these IDs for safety. -->
+  <div class="modal-backdrop" id="modal" hidden>
+    <div class="modal">
+      <div class="modal-head">
+        <h2 id="m-title">Game</h2>
+        <button class="icon-btn" id="m-close">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-art" id="m-art"></div>
+        <div class="sub" id="m-meta" style="color:var(--text-dim);font-size:13px"></div>
+        <div style="margin-top:14px">
+          <div class="label">Streaming mode</div>
+          <div class="row" style="gap:6px">
+            <label class="codec-opt"><input type="radio" name="m-codec" value="h264" checked> H.264 <small>works everywhere</small></label>
+            <label class="codec-opt"><input type="radio" name="m-codec" value="hevc"> HEVC <small>browser-dependent</small></label>
+            <label class="codec-opt"><input type="radio" name="m-codec" value="av1"> AV1 <small>40-series GPU</small></label>
+          </div>
+        </div>
+        <div class="modal-actions" style="margin-top:14px">
+          <button class="btn btn-primary" id="m-stream">Play in browser</button>
+          <button class="btn" id="m-register">Register with Sunshine</button>
+        </div>
+        <div id="m-result" style="margin-top:12px"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Now-playing bar — TOP-LEVEL so its position:fixed anchors to the
+       viewport, not to the music section (which has a transform animation
+       that would otherwise create a containing block). JS toggles `hidden`
+       based on the active view so it only appears on the Music tab. -->
+  <div id="sp-now" class="sp-now" hidden>
+    <div id="sp-now-art" class="sp-now-art"></div>
+    <div class="sp-now-meta">
+      <div id="sp-now-title">Nothing playing</div>
+      <div id="sp-now-artist">Pick a track above to start</div>
+    </div>
+    <div class="sp-now-controls">
+      <button class="sp-ctrl" id="sp-prev" title="Previous" aria-label="Previous">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2.5a.5.5 0 0 1 1 0V7l7-4.5a.5.5 0 0 1 .8.4v10.2a.5.5 0 0 1-.8.4L4 9v4.5a.5.5 0 0 1-1 0z"/></svg>
+      </button>
+      <button class="sp-ctrl sp-play-btn" id="sp-toggle" title="Play/Pause" aria-label="Play/Pause">
+        <svg id="sp-toggle-icon" width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M6 3l6 5l-6 5z"/></svg>
+      </button>
+      <button class="sp-ctrl" id="sp-next" title="Next" aria-label="Next">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M13 2.5a.5.5 0 0 0-1 0V7L5 2.5a.5.5 0 0 0-.8.4v10.2a.5.5 0 0 0 .8.4L12 9v4.5a.5.5 0 0 0 1 0z"/></svg>
+      </button>
+    </div>
+    <div class="sp-now-progress">
+      <span id="sp-now-cur" class="sp-time">0:00</span>
+      <input type="range" id="sp-seek" min="0" max="100" value="0" />
+      <span id="sp-now-dur" class="sp-time">0:00</span>
+    </div>
+    <div class="sp-now-vol">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      <input type="range" id="sp-volume" min="0" max="100" value="60" />
+    </div>
+  </div>
+
+  <script src="js/wallpapers.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- PWA bootstrap: register service worker + handle install prompt -->
+  <script>
+    // Register the SW (silently — failure is fine, the site still works).
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
+
+    // Capture the beforeinstallprompt event so we can trigger it from
+    // our own "Install as app" sidebar button instead of relying on the
+    // browser's address-bar icon (which users often miss).
+    let _deferredInstall = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      _deferredInstall = e;
+      const btn = document.getElementById('nav-install-app');
+      if (btn) btn.hidden = false;
+    });
+    window.addEventListener('appinstalled', () => {
+      // Hide the button after install + clear the prompt
+      _deferredInstall = null;
+      const btn = document.getElementById('nav-install-app');
+      if (btn) btn.hidden = true;
+      if (typeof toast === 'function') toast('Installed! Find Workspace in your apps.', 'ok');
+    });
+    document.getElementById('nav-install-app')?.addEventListener('click', async () => {
+      if (!_deferredInstall) {
+        if (typeof toast === 'function') {
+          toast('Install not available — already installed, or use the address-bar Install icon', '');
+        }
+        return;
+      }
+      _deferredInstall.prompt();
+      const { outcome } = await _deferredInstall.userChoice;
+      if (outcome !== 'accepted' && typeof toast === 'function') {
+        toast('Install cancelled', '');
+      }
+      _deferredInstall = null;
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script>window.__API_BASE = "https://journal.innerthoughtz00.workers.dev/dash-eb83f13e751c";</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connecting Spotify…</title>
+  <link rel="stylesheet" href="css/innerPersonal.css" />
+  <style>
+    body { background:#000; min-height:100vh; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:22px; color:var(--text); font-family:'Inter',sans-serif; }
+    .spinner { width:34px; height:34px; border:3px solid rgba(255,255,255,0.15); border-top-color: var(--text); border-radius:50%; animation:sp 1s linear infinite; }
+    @keyframes sp { to { transform: rotate(360deg); } }
+    #status { font-size:13px; color:var(--text-dim); max-width:460px; text-align:center; line-height:1.5; }
+    #status .err { color: var(--danger); }
+    a { color: var(--text); }
+  </style>
+</head>
+<body>
+  <div class="spinner" id="spinner"></div>
+  <div id="status">Connecting to Spotify…</div>
+
+  <script>
+  // OAuth PKCE callback. Spotify redirects here with ?code=... after the
+  // user authorizes the app. We:
+  //   1) read the auth code,
+  //   2) look up the PKCE verifier we stashed in sessionStorage,
+  //   3) fetch the Spotify Client ID from the server config,
+  //   4) exchange code + verifier for an access/refresh token pair,
+  //   5) save tokens to localStorage and navigate back to the launcher.
+  (async () => {
+    const setStatus = (msg, isErr) => {
+      const el = document.getElementById('status');
+      el.innerHTML = isErr ? `<span class="err">${msg}</span><br><br><a href="./">← back to launcher</a>` : msg;
+      if (isErr) document.getElementById('spinner').style.display = 'none';
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    const code   = params.get('code');
+    const error  = params.get('error');
+    const verifier = sessionStorage.getItem('sp-pkce-verifier');
+
+    if (error) {
+      setStatus(`Spotify said: <strong>${error}</strong>. You probably hit Cancel.`, true);
+      return;
+    }
+    if (!code) {
+      setStatus('No auth code in the redirect URL.', true);
+      return;
+    }
+    if (!verifier) {
+      setStatus('Auth verifier missing — try Connect Spotify again from the Music tab.', true);
+      return;
+    }
+
+    // Fetch Client ID from our server (it's a public identifier — safe).
+    let clientId = '';
+    try {
+      const cfg = await fetch('/api/config').then(r => r.json());
+      clientId = cfg.spotifyClientId || '';
+    } catch (e) {
+      setStatus('Failed to load Client ID from server: ' + e.message, true);
+      return;
+    }
+    if (!clientId) {
+      setStatus('No Spotify Client ID set up. Open Setup → Spotify in the launcher first.', true);
+      return;
+    }
+
+    // Exchange code for token (browser-side, PKCE — no client secret needed).
+    const body = new URLSearchParams({
+      client_id: clientId,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: window.location.origin + '/spotify-callback.html',
+      code_verifier: verifier,
+    });
+    try {
+      const r = await fetch('https://accounts.spotify.com/api/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString(),
+      });
+      if (!r.ok) {
+        const txt = await r.text().catch(() => '');
+        throw new Error(`Token exchange ${r.status}: ${txt.slice(0, 200)}`);
+      }
+      const data = await r.json();
+      localStorage.setItem('sp-tokens', JSON.stringify({
+        access_token:  data.access_token,
+        refresh_token: data.refresh_token,
+        expires_at:    Date.now() + (data.expires_in * 1000),
+        scope:         data.scope,
+      }));
+      sessionStorage.removeItem('sp-pkce-verifier');
+
+      // Persist the refresh token to the server so other browsers (a
+      // friend's laptop, the same user on a different device) can mint
+      // fresh access tokens without redoing OAuth.
+      try {
+        const ipToken = localStorage.getItem('ip-token') || '';
+        const headers = { 'Content-Type': 'application/json' };
+        if (ipToken) headers['x-ip-token'] = ipToken;
+        await fetch('/api/spotify/refresh-token', {
+          method: 'POST', headers,
+          body: JSON.stringify({ refresh_token: data.refresh_token }),
+        });
+      } catch (e) {
+        console.warn('[spotify] failed to persist refresh token to server:', e);
+      }
+
+      setStatus('Connected. Returning to launcher…');
+      // Brief delay so user sees the success state
+      setTimeout(() => { location.href = '/#music'; }, 600);
+    } catch (e) {
+      setStatus('Token exchange failed: ' + (e.message || 'unknown'), true);
+    }
+  })();
+  </script>
+</body>
+</html>

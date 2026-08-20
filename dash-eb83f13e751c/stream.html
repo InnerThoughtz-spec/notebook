@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <script>window.__API_BASE = "https://journal.innerthoughtz00.workers.dev/dash-eb83f13e751c";</script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>InnerPersonal — Streaming</title>
+  <link rel="stylesheet" href="css/innerPersonal.css" />
+  <style>
+    body { background: #000; margin: 0; overflow: hidden; }
+    #stage { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+    #video { width: 100%; height: 100%; background: #000; object-fit: contain; }
+    #hud {
+      position: fixed; top: 12px; left: 12px;
+      background: rgba(5,8,14,0.90); backdrop-filter: none;
+      border: 1px solid var(--line);
+      padding: 8px 12px; border-radius: 10px;
+      display: flex; gap: 12px; align-items: center;
+      font-size: 12px; color: var(--text-dim);
+      z-index: 10;
+      transition: opacity .25s;
+    }
+    #hud.hide { opacity: 0; pointer-events: none; }
+    #hud .pill { display: inline-flex; align-items: center; gap: 6px; }
+    #hud .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-faint); }
+    #hud .dot.ok { background: var(--ok); box-shadow: 0 0 6px var(--ok); }
+    #hud .dot.warn { background: var(--warn); }
+    #hud .dot.bad { background: var(--danger); }
+    #hud a, #hud button { background: transparent; border: 1px solid var(--line); color: var(--text); padding: 4px 8px; border-radius: 6px; font-size: 11px; cursor: pointer; text-decoration: none; }
+
+    #boot {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center; flex-direction: column;
+      gap: 18px; color: var(--text); padding: 24px; text-align: center;
+      background:
+        radial-gradient(800px 400px at 50% 30%, rgba(167,139,250,0.12), transparent 60%),
+        radial-gradient(900px 500px at 50% 70%, rgba(94,234,212,0.10), transparent 60%),
+        var(--bg-0);
+    }
+    #boot h1 { margin: 0; font-size: 22px; font-weight: 600; }
+    #boot .game { color: var(--accent); }
+    #boot .stage-desc { color: var(--text-dim); font-size: 14px; max-width: 480px; line-height: 1.5; }
+    .spinner { width: 36px; height: 36px; border-radius: 50%; border: 3px solid var(--bg-3); border-top-color: var(--accent); animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+
+    /* Click-to-capture overlay */
+    #capture-overlay {
+      position: fixed; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      background: rgba(10,13,20,0.72); backdrop-filter: none;
+      cursor: pointer;
+      z-index: 20;
+      transition: opacity 0.2s;
+    }
+    #capture-overlay.hide { opacity: 0; visibility: hidden; pointer-events: none; backdrop-filter: none; }
+    .capture-card {
+      background: var(--bg-1); border: 1px solid var(--accent);
+      box-shadow: 0 0 40px rgba(94,234,212,0.25);
+      padding: 28px 36px; border-radius: 14px; text-align: center; max-width: 380px;
+    }
+    .capture-icon { font-size: 36px; margin-bottom: 8px; }
+    .capture-title { font-size: 18px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+    .capture-sub { font-size: 13px; color: var(--text-dim); line-height: 1.5; }
+    .capture-sub kbd { background: var(--bg-3); padding: 1px 6px; border-radius: 4px; border: 1px solid var(--line); font-family: inherit; font-size: 12px; }
+    #hud .pill .dot { transition: background 0.15s; }
+    #hud-input.captured { color: var(--accent); }
+
+    /* Virtual cursor — visible only while pointer lock is engaged */
+    #virtual-cursor {
+      position: fixed;
+      top: 0; left: 0;
+      width: 18px; height: 24px;
+      pointer-events: none;
+      z-index: 30;
+      display: none;
+      will-change: transform;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 32'><path d='M2 2 L2 24 L8 19 L12 30 L16 28 L12 17 L21 17 Z' fill='white' stroke='black' stroke-width='1.6' stroke-linejoin='round' stroke-linecap='round'/></svg>");
+      background-size: contain;
+      background-repeat: no-repeat;
+      filter: drop-shadow(0 1px 2px rgba(0,0,0,0.6));
+      /* No transition on transform — we want frame-perfect cursor */
+    }
+    #virtual-cursor.show { display: block; }
+
+    /* 2026 viewer refresh: compact telemetry, clearer hierarchy, less chrome. */
+    #stage { background: #020307; }
+    #stage:fullscreen { width: 100vw; height: 100vh; background: #000; }
+    #stage:-webkit-full-screen { width: 100vw; height: 100vh; background: #000; }
+    #video { image-rendering: auto; }
+    #hud {
+      top: 14px; left: 50%;
+      transform: translateX(-50%);
+      width: max-content; max-width: calc(100vw - 24px);
+      padding: 7px 9px; gap: 4px;
+      background: rgba(5, 8, 14, 0.78);
+      border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 999px;
+      box-shadow: 0 14px 48px rgba(0,0,0,0.45);
+    }
+    #hud .pill { padding: 5px 8px; border-radius: 999px; white-space: nowrap; }
+    #hud-quality { color: #a7f3d0; background: rgba(52,211,153,0.10); }
+    #hud-quality.fair { color: #fde68a; background: rgba(251,191,36,0.10); }
+    #hud-quality.poor { color: #fecaca; background: rgba(248,113,113,0.12); }
+    #hud button, #hud a {
+      border-color: rgba(255,255,255,0.12);
+      border-radius: 999px; padding: 6px 10px;
+    }
+    #hud button:hover, #hud a:hover { background: rgba(255,255,255,0.10); }
+    #hud-counts, #hud-test { display: none; }
+
+    #boot {
+      isolation: isolate;
+      gap: 14px;
+      background:
+        radial-gradient(900px 560px at 20% 10%, rgba(124,58,237,0.26), transparent 58%),
+        radial-gradient(720px 460px at 88% 82%, rgba(14,165,233,0.18), transparent 60%),
+        #05060a;
+    }
+    #boot::before {
+      content: '';
+      position: absolute; z-index: -1;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: min(560px, calc(100vw - 32px));
+      height: min(560px, calc(100vh - 32px));
+      max-height: 620px;
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 28px;
+      background: linear-gradient(160deg, rgba(255,255,255,0.075), rgba(255,255,255,0.025));
+      box-shadow: 0 40px 120px rgba(0,0,0,0.55), inset 0 1px rgba(255,255,255,0.08);
+      backdrop-filter: blur(28px) saturate(150%);
+    }
+    .stream-mark {
+      display: flex; align-items: center; gap: 9px;
+      font-size: 10px; letter-spacing: 0.18em; font-weight: 700;
+      color: rgba(255,255,255,0.58); margin-bottom: 8px;
+    }
+    .stream-mark span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: #8b5cf6; box-shadow: 0 0 18px #8b5cf6;
+    }
+    #boot h1 { font-size: clamp(28px, 5vw, 42px); font-weight: 700; letter-spacing: -0.04em; }
+    #boot .stage-desc { color: #a9b2c3; }
+    .boot-profile {
+      padding: 7px 11px; border-radius: 999px;
+      background: rgba(255,255,255,0.055); border: 1px solid rgba(255,255,255,0.09);
+      color: #cbd5e1; font-size: 11px;
+    }
+    #boot-error { margin-top: 6px; color: var(--danger); font-size: 13px; max-width: 500px; }
+    #boot-diag {
+      margin-top: 6px; width: min(500px, 100%); padding: 14px 16px;
+      border-radius: 14px; background: rgba(0,0,0,0.24);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    #diag-list { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; line-height: 1.75; }
+
+    #capture-overlay { background: rgba(2,3,7,0.68); backdrop-filter: none; }
+    .capture-card {
+      background: rgba(8,10,16,0.86); border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 28px 90px rgba(0,0,0,0.52);
+      border-radius: 22px; padding: 30px 36px;
+    }
+    .capture-icon {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 26px; padding: 0 10px; border-radius: 999px;
+      background: rgba(139,92,246,0.16); color: #c4b5fd;
+      font-size: 9px; letter-spacing: .16em; font-weight: 800;
+    }
+    .capture-title { font-size: 21px; letter-spacing: -0.02em; margin-top: 10px; }
+
+    @media (max-width: 760px) {
+      #hud { top: auto; bottom: 10px; overflow-x: auto; justify-content: flex-start; }
+      #hud-ping, #hud-bw, #hud-loss { display: none; }
+      #boot::before { height: calc(100vh - 24px); }
+      .capture-card { margin: 18px; padding: 24px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="boot">
+    <div class="stream-mark"><span></span> CLOUD PLAY</div>
+    <div class="spinner" id="boot-spinner"></div>
+    <h1>Launching <span class="game" id="boot-game">…</span></h1>
+    <div class="stage-desc" id="boot-desc">Connecting to your home PC over WebRTC. No install required.</div>
+    <div class="boot-profile" id="boot-profile">Smart quality · checking this device</div>
+    <div class="btn-row">
+      <a class="btn" href="./">Back to library</a>
+      <button class="btn" id="btn-fs">Fullscreen on connect</button>
+      <button class="btn btn-primary" id="btn-retry" hidden>Retry connection</button>
+    </div>
+    <div id="boot-error" style="margin-top:8px;color:var(--danger);font-size:13px;max-width:540px"></div>
+    <div id="boot-diag" style="margin-top:14px;max-width:540px;font-size:12px;color:var(--text-dim);display:none">
+      <div style="font-weight:600;color:var(--text);margin-bottom:6px">Connection diagnostics</div>
+      <div id="diag-list" style="font-family:'Courier New',monospace;line-height:1.7"></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text-faint)">Share these details if you need help. The first ✗ is where it failed.</div>
+    </div>
+  </div>
+
+  <div id="stage" hidden>
+    <video id="video" autoplay playsinline tabindex="0"></video>
+    <!-- Virtual cursor — Windows uses a hardware cursor which ddagrab
+         can't capture, so the host's real cursor is invisible in the
+         stream. We render this overlay at the position our accumulated
+         pointer-lock deltas point to. It mirrors where the host cursor
+         actually is, so the user can see where they're aiming. -->
+    <div id="virtual-cursor" aria-hidden="true"></div>
+    <!-- Big "click to capture" overlay shown when pointer is NOT locked -->
+    <div id="capture-overlay">
+      <div class="capture-card">
+        <div class="capture-icon" id="capture-icon">CONTROL</div>
+        <div class="capture-title" id="capture-title">Click to take control</div>
+        <div class="capture-sub" id="capture-sub">Mouse + keyboard go to your home PC.<br>Press <kbd>Esc</kbd> to release.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="hud" class="hide">
+    <div class="pill"><span class="dot" id="hud-dot"></span><span id="hud-state">connecting…</span></div>
+    <div class="pill" id="hud-ping">— ms</div>
+    <div class="pill" id="hud-bw">— Mbps</div>
+    <div class="pill" id="hud-input">⚪ input idle</div>
+    <div class="pill" id="hud-counts">m:0 c:0 k:0</div>
+    <div class="pill" id="hud-quality">network —</div>
+    <div class="pill" id="hud-fps">— fps</div>
+    <div class="pill" id="hud-loss">0% loss</div>
+    <div class="pill" id="hud-route">route —</div>
+    <button id="hud-test">Test input</button>
+    <button id="hud-fs">Fullscreen</button>
+    <a href="./">Quit</a>
+  </div>
+
+  <script src="js/stream-client.js"></script>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const sessionId = params.get('session');
+    const fullscreenWanted = { value: true };
+    const hud = document.getElementById('hud');
+    const hudDot = document.getElementById('hud-dot');
+    const hudState = document.getElementById('hud-state');
+    const boot = document.getElementById('boot');
+    const stage = document.getElementById('stage');
+    const video = document.getElementById('video');
+    const bootErr = document.getElementById('boot-error');
+    const bootGame = document.getElementById('boot-game');
+
+    async function enterStreamFullscreen() {
+      // Fullscreen the stage, not the video by itself. The virtual cursor and
+      // control overlay are siblings of <video>; fullscreening only <video>
+      // removes those siblings from the browser's fullscreen top layer.
+      if (document.fullscreenElement) return;
+      try { await stage.requestFullscreen?.({ navigationUI: 'hide' }); }
+      catch { try { await stage.requestFullscreen?.(); } catch {} }
+    }
+
+    document.getElementById('btn-fs').onclick = () => {
+      fullscreenWanted.value = !fullscreenWanted.value;
+      document.getElementById('btn-fs').textContent = fullscreenWanted.value ? 'Fullscreen on connect' : 'Windowed on connect';
+    };
+    document.getElementById('hud-fs').onclick = () => {
+      if (document.fullscreenElement) document.exitFullscreen();
+      else enterStreamFullscreen();
+    };
+
+    // Test input — sends mouse moves, ONE click, and types "WASD" via the
+    // data channel WITHOUT requiring pointer lock. Pure pipeline test.
+    document.getElementById('hud-test').onclick = () => {
+      const dc = window.InnerPersonalStream?.dc;
+      if (!dc || dc.readyState !== 'open') {
+        alert('Data channel not open. State: ' + (dc ? dc.readyState : 'no dc'));
+        return;
+      }
+      // Move
+      for (let i = 0; i < 10; i++) dc.send(JSON.stringify({ t: 'mm', dx: 10, dy: 5 }));
+      // Click (button down + up)
+      setTimeout(() => {
+        dc.send(JSON.stringify({ t: 'mb', b: 0, d: 1 }));
+        dc.send(JSON.stringify({ t: 'mb', b: 0, d: 0 }));
+      }, 200);
+      // Type WASD
+      setTimeout(() => {
+        for (const c of ['KeyW','KeyA','KeyS','KeyD']) {
+          dc.send(JSON.stringify({ t: 'k', c, d: 1 }));
+          dc.send(JSON.stringify({ t: 'k', c, d: 0 }));
+        }
+      }, 400);
+      setTimeout(() => alert('Sent: 10 mouse moves + 1 left click + WASD keys.\nDid the host respond?'), 1000);
+    };
+
+    // Capture model:
+    //   `captured` is OUR intent. Once true, the overlay STAYS HIDDEN.
+    //   The browser's pointer lock can flip on/off (Esc, alt-tab, etc.) —
+    //   when it flips off while captured=true, we show a small "Click to
+    //   re-capture" toast instead of the full overlay.
+    //   Each Esc keydown bumps escCount. On the 5th Esc we release captured
+    //   (full overlay returns). Counter resets after 1.5s of no Esc.
+    const captureOverlay = document.getElementById('capture-overlay');
+    const hudInput = document.getElementById('hud-input');
+    let captured = false;
+    let escCount = 0;
+    let escResetTimer = null;
+    const ESC_TO_RELEASE = 5;
+
+    function refreshCapture() {
+      const locked = document.pointerLockElement === video;
+      captureOverlay.classList.toggle('hide', captured);
+      if (captured) {
+        if (isTouch) {
+          // No pointer lock concept on touch — captured = ready for touches.
+          hudInput.textContent = '👆 touch captured';
+        } else if (locked) {
+          if (escCount > 0) {
+            hudInput.textContent = `🟢 captured  Esc ${escCount}/${ESC_TO_RELEASE} to exit`;
+          } else {
+            hudInput.textContent = '🟢 input captured';
+          }
+        } else {
+          hudInput.textContent = '🟡 click video to re-capture';
+        }
+        hudInput.classList.add('captured');
+      } else {
+        hudInput.textContent = '⚪ input idle';
+        hudInput.classList.remove('captured');
+      }
+    }
+
+    // Detect touch device — pointer lock is mouse-only, doesn't apply to phones.
+    const isTouch = 'ontouchstart' in window || (navigator.maxTouchPoints || 0) > 0;
+    if (isTouch) {
+      document.getElementById('capture-icon').textContent = 'TOUCH';
+      document.getElementById('capture-title').textContent = 'Tap to take control';
+      document.getElementById('capture-sub').innerHTML =
+        'Touches go to your home PC.<br>1-finger: move/click · long-press: right-click · 2-finger drag: scroll';
+    }
+
+    async function takeControl() {
+      captured = true;
+      // Fullscreen first — Keyboard Lock requires it on Chromium.
+      if (!document.fullscreenElement) {
+        await enterStreamFullscreen();
+      }
+      if (!isTouch) {
+        // Desktop: try Keyboard Lock so Esc passes through, then pointer lock.
+        // In PWA standalone mode we can lock more keys (browser doesn't
+        // intercept Tab, F11, etc.) so we hand the game a fuller keyboard.
+        const lockKeys = isStandalone
+          ? ['Escape', 'F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12', 'Tab']
+          : ['Escape'];
+        try { await navigator.keyboard?.lock?.(lockKeys); } catch {}
+        try { await video.requestPointerLock(); } catch {}
+      }
+      // Acquire screen wake lock so the device never dims while playing.
+      // Especially impactful on Chromebooks (default dim timer is short).
+      acquireWakeLock();
+      refreshCapture();
+      // Defensive: Chrome sometimes pauses a WebRTC video when fullscreen
+      // + pointer lock transition together. Force playback to resume.
+      try { await video.play(); } catch {}
+    }
+
+    // Belt-and-suspenders: if anything ever pauses the video element while
+    // the WebRTC track is still healthy, immediately resume it. The
+    // RTCPeerConnection keeps delivering frames whether the <video> tag is
+    // playing or paused, so a sticky `paused` state would look like a freeze
+    // (because the data channel and inputs keep working).
+    video.addEventListener('pause', () => {
+      // Only auto-resume if the track is still live — don't fight a
+      // legitimate end-of-stream.
+      const stream = video.srcObject;
+      const tracks = stream && stream.getVideoTracks ? stream.getVideoTracks() : [];
+      const live = tracks.some(t => t.readyState === 'live');
+      if (live) video.play().catch(() => {});
+    });
+
+    function releaseControl() {
+      captured = false;
+      escCount = 0;
+      try { navigator.keyboard?.unlock?.(); } catch {}
+      if (document.pointerLockElement === video) document.exitPointerLock();
+      releaseWakeLock();
+      refreshCapture();
+    }
+
+    captureOverlay.addEventListener('click', takeControl);
+    // Clicking on the video while captured but unlocked re-engages pointer lock.
+    video.addEventListener('click', () => {
+      if (captured && document.pointerLockElement !== video) {
+        video.requestPointerLock?.();
+      }
+    });
+    document.addEventListener('pointerlockchange', refreshCapture);
+    document.addEventListener('pointerlockerror', () => {
+      bootErr.textContent = 'Pointer lock blocked by browser. Try fullscreen first.';
+    });
+
+    // Track Esc presses while captured. Counter goes up regardless of whether
+    // pointer lock is currently held — that way even when Keyboard Lock fails
+    // and Esc releases pointer lock, the user can press Esc 5 times to truly
+    // surface the overlay.
+    document.addEventListener('keydown', (e) => {
+      if (e.code !== 'Escape') return;
+      if (!captured) return;
+
+      escCount++;
+      clearTimeout(escResetTimer);
+      escResetTimer = setTimeout(() => { escCount = 0; refreshCapture(); }, 1500);
+
+      if (escCount >= ESC_TO_RELEASE) {
+        releaseControl();
+        return;
+      }
+      refreshCapture();
+      // Don't preventDefault — we WANT the Esc to also forward to the host
+      // through attachInputs() so the game can navigate menus.
+    }, true);
+
+    let hudTimer;
+    let lastHudPoke = 0;
+    function pokeHud(force = false) {
+      if (!force && document.pointerLockElement === video) return;
+      const now = performance.now();
+      if (!force && now - lastHudPoke < 250) return;
+      lastHudPoke = now;
+      hud.classList.remove('hide');
+      clearTimeout(hudTimer);
+      hudTimer = setTimeout(() => hud.classList.add('hide'), 3000);
+    }
+    document.addEventListener('mousemove', () => pokeHud(false), { passive: true });
+    document.addEventListener('keydown', () => pokeHud(true));
+
+    // ---- PWA-mode upgrades -----------------------------------------
+    // These tangibly improve streaming UX when the launcher is installed
+    // as a PWA on ChromeOS / Windows / Mac. Most also work in a normal
+    // browser tab; PWA mode just makes some of them work more reliably.
+
+    // Detect standalone (installed) display mode
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.matchMedia('(display-mode: window-controls-overlay)').matches ||
+      window.navigator.standalone === true;
+    if (isStandalone) document.documentElement.classList.add('pwa');
+
+    // Screen Wake Lock — prevents Chromebook / laptop screen from
+    // dimming or sleeping while streaming. Re-acquired automatically
+    // after window backgrounding.
+    let _wakeLock = null;
+    async function acquireWakeLock() {
+      if (!('wakeLock' in navigator)) return;
+      try {
+        _wakeLock = await navigator.wakeLock.request('screen');
+        _wakeLock.addEventListener('release', () => { _wakeLock = null; });
+      } catch (e) {
+        console.warn('[stream] wake lock failed:', e.message);
+      }
+    }
+    function releaseWakeLock() {
+      try { _wakeLock?.release(); } catch {}
+      _wakeLock = null;
+    }
+    // Re-acquire if user backgrounded the tab and returns
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && captured && !_wakeLock) {
+        acquireWakeLock();
+      }
+    });
+
+    // Render diagnostics — called every time something changes
+    const ICONS = { pending: '·', checking: '…', ok: '✓', fail: '✗' };
+    function renderDiag(d) {
+      if (!d) return;
+      const list = document.getElementById('diag-list');
+      const cands = `host=${d.iceCandidates?.host || 0} stun=${d.iceCandidates?.srflx || 0} turn=${d.iceCandidates?.relay || 0}`;
+      list.innerHTML =
+        `<div>${ICONS[d.session]} fetch session</div>` +
+        `<div>${ICONS[d.signaling]} signaling websocket</div>` +
+        `<div>${ICONS[d.sdp]} SDP offer/answer exchange</div>` +
+        `<div>${ICONS[d.iceGather]} ICE candidate gathering &nbsp; (${cands})</div>` +
+        `<div>${ICONS[d.iceConnect]} ICE connection</div>` +
+        `<div>${ICONS[d.media]} media flowing</div>`;
+    }
+    document.getElementById('btn-retry').onclick = () => location.reload();
+
+    if (!sessionId) {
+      bootErr.textContent = 'No session id in URL. Go back to the library and click Play in browser.';
+    } else {
+      InnerPersonalStream.connect({
+        sessionId,
+        token: localStorage.getItem('ip-token') || '',
+        video,
+        onMeta: (m) => {
+          bootGame.textContent = m.gameName || 'session';
+          const q = m.streamSettings || {};
+          const mode = q.adaptiveMode && q.adaptiveMode !== 'manual' ? `Auto ${q.adaptiveMode}` : 'Manual';
+          document.getElementById('boot-profile').textContent =
+            `${mode} · ${q.width || '—'}×${q.height || '—'} · ${q.framerate || '—'} fps · ${q.bitrateKbps || '—'} kbps`;
+        },
+        onDiag: renderDiag,
+        onState: (s, info) => {
+          hudState.textContent = s;
+          hudDot.className = 'dot ' + (s === 'streaming' ? 'ok' : ['connecting', 'pairing', 'reconnecting'].includes(s) ? 'warn' : 'bad');
+          if (s === 'streaming') {
+            boot.hidden = true; stage.hidden = false; pokeHud();
+            refreshCapture();
+            video.focus();
+            if (fullscreenWanted.value) enterStreamFullscreen();
+
+            // After 4s, check whether the browser is actually decoding the
+            // bytes we're receiving. If bytes flow but videoWidth stays 0,
+            // the codec isn't supported by the browser's WebRTC decoder.
+            setTimeout(() => {
+              if (video.videoWidth === 0 && video.readyState < 2) {
+                bootErr.textContent = 'Stream is flowing but your browser cannot decode this codec over WebRTC. Switch streaming mode to H.264 in the launcher.';
+                document.getElementById('boot').hidden = false;
+                document.getElementById('stage').hidden = true;
+              }
+            }, 4000);
+          } else if (s === 'failed') {
+            bootErr.textContent = (info && info.message) || 'Connection failed.';
+            document.getElementById('boot').hidden = false;
+            document.getElementById('stage').hidden = true;
+            document.getElementById('boot-spinner').style.display = 'none';
+            document.getElementById('boot-diag').style.display = 'block';
+            document.getElementById('btn-retry').hidden = false;
+            if (info?.diag) renderDiag(info.diag);
+          }
+        },
+        onStats: ({ rttMs, mbps, lossPct, fps, path, quality }) => {
+          if (rttMs != null) document.getElementById('hud-ping').textContent = Math.round(rttMs) + ' ms';
+          if (mbps != null) document.getElementById('hud-bw').textContent = mbps.toFixed(1) + ' Mbps';
+          if (fps != null) document.getElementById('hud-fps').textContent = Math.round(fps) + ' fps';
+          if (lossPct != null) document.getElementById('hud-loss').textContent = lossPct.toFixed(2) + '% loss';
+          if (path) document.getElementById('hud-route').textContent = 'route ' + path;
+          const qualityEl = document.getElementById('hud-quality');
+          qualityEl.textContent = 'network ' + (quality || '—');
+          qualityEl.className = 'pill ' + (quality || '');
+        },
+        onNetwork: (network) => {
+          const qualityEl = document.getElementById('hud-quality');
+          const profile = network.streamSettings;
+          qualityEl.textContent = network.quality === 'optimizing' && profile
+            ? `optimizing ${profile.height}p${profile.framerate}`
+            : 'network ' + (network.quality || '—');
+          qualityEl.className = 'pill ' + (network.quality || '');
+          qualityEl.title = network.recommendation || 'Live WebRTC connection quality';
+        },
+      });
+    }
+  </script>
+</body>
+</html>
