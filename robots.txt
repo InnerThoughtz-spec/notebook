@@ -1,0 +1,2 @@
+User-agent: *
+Disallow: /dash-eb83f13e751c/
